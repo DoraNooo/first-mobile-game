@@ -745,12 +745,7 @@ export class LavaBlob {
         // Pinch waist tighter as droplet stretches farther
         const waistHalfW = Math.min(baseHalfW, dropHalfW) * (0.58 - stretchT * 0.48);
 
-        const neckGrad = ctx.createLinearGradient(ax, ay, drop.x, drop.y);
-        neckGrad.addColorStop(0, rgbString(blobEdge, 0.92 * (1 - stretchT * 0.25)));
-        neckGrad.addColorStop(0.5, rgbString(blobEdge, 0.86 * (1 - stretchT * 0.35)));
-        neckGrad.addColorStop(1, rgbString(blobEdge, 0.92 * (1 - stretchT * 0.25)));
-
-        ctx.fillStyle = neckGrad;
+        ctx.fillStyle = rgbString(blobEdge, 0.89 * (1 - stretchT * 0.3));
         ctx.beginPath();
         ctx.moveTo(ax + perpX * baseHalfW, ay + perpY * baseHalfW);
         ctx.quadraticCurveTo(
@@ -802,6 +797,9 @@ export class LavaBlob {
   }
 
   _drawConvectionBubbles(ctx, size, hotCore, blobCore, time) {
+    const outerCol = rgbString(blobCore, 0.18);
+    const innerCol = rgbString(hotCore, 0.34);
+
     for (let i = 0; i < this.bubbles.length; i++) {
       const b = this.bubbles[i];
       const ang = b.baseAngle + time * b.speed * 0.55;
@@ -810,14 +808,14 @@ export class LavaBlob {
       const by = this.y + Math.sin(ang * 0.85 + b.phase) * size * radialDrift;
       const br = size * b.relRadius * (0.9 + 0.14 * Math.sin(time * 1.7 + b.phase));
 
-      const bGrad = ctx.createRadialGradient(bx - br * 0.25, by - br * 0.25, br * 0.08, bx, by, br);
-      bGrad.addColorStop(0, rgbString(hotCore, 0.42));
-      bGrad.addColorStop(0.6, rgbString(blobCore, 0.2));
-      bGrad.addColorStop(1, rgbString(blobCore, 0));
-
-      ctx.fillStyle = bGrad;
+      ctx.fillStyle = outerCol;
       ctx.beginPath();
       ctx.arc(bx, by, br, 0, TWO_PI);
+      ctx.fill();
+
+      ctx.fillStyle = innerCol;
+      ctx.beginPath();
+      ctx.arc(bx - br * 0.2, by - br * 0.2, br * 0.54, 0, TWO_PI);
       ctx.fill();
     }
   }

@@ -96,10 +96,29 @@ class GlooGame {
     this.difficulty = this._loadDifficulty();
     this._syncBitesUI();
 
-    // Viewport & Camera
+    // Viewport, Mobile Detection & Adaptive Performance Scaler
     this.width = window.innerWidth;
     this.height = window.innerHeight;
-    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.isMobile = this._detectMobile();
+    this.perfTier = 0;
+    this.dprCap = this.isMobile ? 1.35 : 2;
+    this.dpr = Math.min(window.devicePixelRatio || 1, this.dprCap);
+    this._perfAvgMs = 16.67;
+    this._perfSlowTime = 0;
+    this._perfCooldown = 0;
+
+    this.ecosystem.setMobileMode(this.isMobile);
+    this.particles.configure({ isMobile: this.isMobile });
+
+    // Reusable render & DOM caches (zero per-frame allocations / thrashing)
+    this._viewBounds = { minX: 0, maxX: 0, minY: 0, maxY: 0, zoom: 1 };
+    this._bgGrad = null;
+    this._bgGradKey = '';
+    this._horizonGrad = null;
+    this._horizonGradH = 0;
+    this._hudCache = { scaleName: '', sizeLabel: '', pctStr: '', ariaPct: '' };
+    this._cdCache = { spitStr: '', spitOn: false, dashStr: '', dashOn: false };
+
     this.camera = {
       x: 0,
       y: 0,
@@ -167,6 +186,30 @@ class GlooGame {
     this.bindEvents();
     this.ecosystem.reset(this.blob);
     this.loop(this.lastFrameTime);
+  }
+
+  _detectMobile() {
+    const coarse = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+    return coarse || Math.min(window.innerWidth, window.innerHeight) <= 540;
+  }
+
+  _stepDownPerformance() {
+    if (this.perfTier >= 2) return;
+    this.perfTier += 1;
+    this._perfSlowTime = 0;
+    this._perfCooldown = 2.0;
+    this._perfAvgMs = 16.67;
+
+    if (this.perfTier === 1) {
+      this.dprCap = Math.min(this.dprCap, 1.0);
+      this.particles.setMoteCount(this.isMobile ? 16 : 28);
+      this.ecosystem.setPopulationCap(this.isMobile ? 22 : 34);
+    } else {
+      this.dprCap = Math.min(this.dprCap, 0.85);
+      this.particles.setMoteCount(this.isMobile ? 10 : 18);
+      this.ecosystem.setPopulationCap(this.isMobile ? 18 : 28);
+    }
+    this.resize();
   }
 
   _loadBitesPerScale() {
@@ -240,10 +283,21 @@ class GlooGame {
   resize() {
     this.width = window.innerWidth;
     this.height = window.innerHeight;
-    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (this.perfTier === 0) {
+      const mobile = this._detectMobile();
+      if (mobile !== this.isMobile) {
+        this.isMobile = mobile;
+        this.dprCap = mobile ? 1.35 : 2;
+        this.ecosystem.setMobileMode(mobile);
+        this.particles.configure({ isMobile: mobile });
+      }
+    }
+    this.dpr = Math.min(window.devicePixelRatio || 1, this.dprCap);
     this.canvas.width = Math.floor(this.width * this.dpr);
     this.canvas.height = Math.floor(this.height * this.dpr);
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this._bgGradKey = '';
+    this._horizonGradH = 0;
   }
 
   getTargetPlayerScreenRadius() {
@@ -456,11 +510,27 @@ class GlooGame {
     const spitRatio = this.powers.spit.maxCd > 0 ? Math.max(0, this.powers.spit.cd / this.powers.spit.maxCd) : 0;
     const dashRatio = this.powers.dash.maxCd > 0 ? Math.max(0, this.powers.dash.cd / this.powers.dash.maxCd) : 0;
 
-    this.btnPowerSpit.style.setProperty('--cd', spitRatio.toFixed(3));
-    this.btnPowerSpit.classList.toggle('on-cooldown', this.powers.spit.cd > 0.01);
+    const spitStr = spitRatio.toFixed(2);
+    const spitOn = this.powers.spit.cd > 0.01;
+    if (spitStr !== this._cdCache.spitStr) {
+      this._cdCache.spitStr = spitStr;
+      this.btnPowerSpit.style.setProperty('--cd', spitStr);
+    }
+    if (spitOn !== this._cdCache.spitOn) {
+      this._cdCache.spitOn = spitOn;
+      this.btnPowerSpit.classList.toggle('on-cooldown', spitOn);
+    }
 
-    this.btnPowerDash.style.setProperty('--cd', dashRatio.toFixed(3));
-    this.btnPowerDash.classList.toggle('on-cooldown', this.powers.dash.cd > 0.01);
+    const dashStr = dashRatio.toFixed(2);
+    const dashOn = this.powers.dash.cd > 0.01;
+    if (dashStr !== this._cdCache.dashStr) {
+      this._cdCache.dashStr = dashStr;
+      this.btnPowerDash.style.setProperty('--cd', dashStr);
+    }
+    if (dashOn !== this._cdCache.dashOn) {
+      this._cdCache.dashOn = dashOn;
+      this.btnPowerDash.classList.toggle('on-cooldown', dashOn);
+    }
   }
 
   /**
@@ -683,10 +753,27 @@ class GlooGame {
   updateHUD(progress) {
     const idx = Math.min(NUM_SCALES - 1, Math.floor(progress));
     const pct = Math.max(0, Math.min(100, (progress / NUM_SCALES) * 100));
-    this.hudScaleName.textContent = SCALES[idx].name;
-    this.hudSizeLabel.textContent = formatScientificSize(progress);
-    this.hudProgressFill.style.width = `${pct.toFixed(1)}%`;
-    this.progressTrack.setAttribute('aria-valuenow', String(Math.round(pct)));
+    const scaleName = SCALES[idx].name;
+    const sizeLabel = formatScientificSize(progress);
+    const pctStr = `${pct.toFixed(1)}%`;
+    const ariaPct = String(Math.round(pct));
+
+    if (scaleName !== this._hudCache.scaleName) {
+      this._hudCache.scaleName = scaleName;
+      this.hudScaleName.textContent = scaleName;
+    }
+    if (sizeLabel !== this._hudCache.sizeLabel) {
+      this._hudCache.sizeLabel = sizeLabel;
+      this.hudSizeLabel.textContent = sizeLabel;
+    }
+    if (pctStr !== this._hudCache.pctStr) {
+      this._hudCache.pctStr = pctStr;
+      this.hudProgressFill.style.width = pctStr;
+    }
+    if (ariaPct !== this._hudCache.ariaPct) {
+      this._hudCache.ariaPct = ariaPct;
+      this.progressTrack.setAttribute('aria-valuenow', ariaPct);
+    }
   }
 
   formatDuration(seconds) {
@@ -1258,7 +1345,7 @@ class GlooGame {
           this.blob.vx = Math.cos(awayAngle) * bounceSpeed;
           this.blob.vy = Math.sin(awayAngle) * bounceSpeed;
           this.blob.invulnTimer = 0.55;
-          this.particles.spawnShockwave(this.blob.x, this.blob.y, this.blob.size * 1.8, '#5eead4');
+          this.particles.spawnShockwave(this.blob.x, this.blob.y, this.blob.size, this.blob.size * 3.4, 1);
           this.audio.playStoryChime?.();
           continue;
         }
@@ -1316,32 +1403,39 @@ class GlooGame {
     const t = this.time;
     const px = (this.camera.x * this.camera.zoom) * 0.08;
     const py = (this.camera.y * this.camera.zoom) * 0.08;
+    const mobile = this.isMobile;
 
     ctx.save();
     ctx.globalAlpha = alpha;
 
     if (scaleIdx === 0) {
-      // Scale I — Quantique: soft drifting bioluminescent quantum haze (no sharp target-like rings)
-      for (let i = 0; i < 6; i++) {
+      // Scale I — Quantique: soft drifting bioluminescent quantum haze (zero per-frame gradient allocations)
+      const hazeCount = mobile ? 4 : 6;
+      for (let i = 0; i < hazeCount; i++) {
         const bx = ((i * 223 - px * 0.4) % (w + 220) + (w + 220)) % (w + 220) - 110;
         const by = ((i * 157 - py * 0.4) % (h + 220) + (h + 220)) % (h + 220) - 110;
         const br = 55 + (i % 3) * 32 + Math.sin(t * 0.8 + i) * 10;
-        const g = ctx.createRadialGradient(bx, by, 2, bx, by, br);
-        g.addColorStop(0, i % 2 === 0 ? 'rgba(103, 232, 249, 0.06)' : 'rgba(253, 230, 138, 0.045)');
-        g.addColorStop(1, 'rgba(103, 232, 249, 0)');
-        ctx.fillStyle = g;
+        const outerCol = i % 2 === 0 ? 'rgba(103, 232, 249, 0.028)' : 'rgba(253, 230, 138, 0.022)';
+        const innerCol = i % 2 === 0 ? 'rgba(103, 232, 249, 0.032)' : 'rgba(253, 230, 138, 0.026)';
+        ctx.fillStyle = outerCol;
         ctx.beginPath();
         ctx.arc(bx, by, br, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = innerCol;
+        ctx.beginPath();
+        ctx.arc(bx, by, br * 0.52, 0, Math.PI * 2);
         ctx.fill();
       }
     } else if (scaleIdx === 1) {
       // Scale II — Microscopique: shimmering aquatic caustic light ribbons
       ctx.strokeStyle = 'rgba(134, 239, 172, 0.08)';
       ctx.lineWidth = 2.4;
-      for (let i = 0; i < 6; i++) {
-        const yBase = ((i + 0.5) / 6) * h + Math.sin(t * 0.7 + i * 1.4) * 18;
+      const ribbonCount = mobile ? 4 : 6;
+      const xStep = mobile ? 64 : 48;
+      for (let i = 0; i < ribbonCount; i++) {
+        const yBase = ((i + 0.5) / ribbonCount) * h + Math.sin(t * 0.7 + i * 1.4) * 18;
         ctx.beginPath();
-        for (let x = -20; x <= w + 20; x += 48) {
+        for (let x = -20; x <= w + 20; x += xStep) {
           const wave = Math.sin((x + px * 0.6) * 0.008 + t * 1.1 + i * 1.9) * 24;
           if (x === -20) ctx.moveTo(x, yBase + wave);
           else ctx.lineTo(x, yBase + wave);
@@ -1349,7 +1443,8 @@ class GlooGame {
         ctx.stroke();
       }
       ctx.fillStyle = 'rgba(94, 234, 212, 0.05)';
-      for (let i = 0; i < 8; i++) {
+      const bubbleCount = mobile ? 5 : 8;
+      for (let i = 0; i < bubbleCount; i++) {
         const bx = ((i * 197 - px * 0.5) % (w + 160) + (w + 160)) % (w + 160) - 80;
         const by = ((i * 131 - py * 0.5) % (h + 160) + (h + 160)) % (h + 160) - 80;
         ctx.beginPath();
@@ -1378,7 +1473,8 @@ class GlooGame {
         ctx.restore();
       }
       // Warm golden-emerald forest bokeh
-      for (let i = 0; i < 10; i++) {
+      const bokehCount = mobile ? 7 : 10;
+      for (let i = 0; i < bokehCount; i++) {
         const bx = ((i * 211 - px * 0.45) % (w + 120) + (w + 120)) % (w + 120) - 60;
         const by = ((i * 149 - py * 0.45) % (h + 120) + (h + 120)) % (h + 120) - 60;
         const br = 18 + (i % 4) * 12;
@@ -1391,14 +1487,19 @@ class GlooGame {
         ctx.fill();
       }
     } else if (scaleIdx === 3) {
-      // Scale IV — Nocturne: soft distant city light bokeh & subtle horizon glow
-      const horizonGrad = ctx.createLinearGradient(0, h * 0.55, 0, h);
-      horizonGrad.addColorStop(0, 'rgba(251, 191, 120, 0)');
-      horizonGrad.addColorStop(1, 'rgba(251, 160, 90, 0.09)');
-      ctx.fillStyle = horizonGrad;
+      // Scale IV — Nocturne: soft distant city light bokeh & subtle cached horizon glow
+      if (!this._horizonGrad || this._horizonGradH !== h) {
+        this._horizonGradH = h;
+        const hg = ctx.createLinearGradient(0, h * 0.55, 0, h);
+        hg.addColorStop(0, 'rgba(251, 191, 120, 0)');
+        hg.addColorStop(1, 'rgba(251, 160, 90, 0.09)');
+        this._horizonGrad = hg;
+      }
+      ctx.fillStyle = this._horizonGrad;
       ctx.fillRect(0, h * 0.55, w, h * 0.45);
 
-      for (let i = 0; i < 16; i++) {
+      const cityLights = mobile ? 10 : 16;
+      for (let i = 0; i < cityLights; i++) {
         const bx = ((i * 173 - px * 0.4) % (w + 100) + (w + 100)) % (w + 100) - 50;
         const by = ((i * 113 - py * 0.4) % (h + 100) + (h + 100)) % (h + 100) - 50;
         const glow = 0.06 + 0.04 * Math.sin(t * 1.4 + i * 2.1);
@@ -1411,7 +1512,8 @@ class GlooGame {
       }
     } else if (scaleIdx === 4) {
       // Scale V — Planétaire: crisp twinkling starfield + sweeping orbital arcs
-      for (let i = 0; i < 36; i++) {
+      const starCount = mobile ? 22 : 36;
+      for (let i = 0; i < starCount; i++) {
         const sx = ((i * 199 - px * 0.25) % w + w) % w;
         const sy = ((i * 137 - py * 0.25) % h + h) % h;
         const tw = 0.28 + 0.35 * Math.sin(t * (1.8 + (i % 5) * 0.4) + i * 1.7);
@@ -1447,7 +1549,8 @@ class GlooGame {
         ctx.arc(cx, cy, rad, 0, Math.PI * 2);
         ctx.fill();
       }
-      for (let i = 0; i < 42; i++) {
+      const deepStars = mobile ? 26 : 42;
+      for (let i = 0; i < deepStars; i++) {
         const sx = ((i * 223 - px * 0.2) % w + w) % w;
         const sy = ((i * 157 - py * 0.2) % h + h) % h;
         const tw = 0.25 + 0.4 * Math.sin(t * 2.2 + i * 1.3);
@@ -1523,18 +1626,25 @@ class GlooGame {
     const progress = sizeToProgress(this.blob.size);
     const palette = getBlendedPalette(progress);
 
-    // 1. Rich bioluminescent radial gradient background
-    const bgGrad = ctx.createRadialGradient(
-      this.width * 0.5,
-      this.height * 0.45,
-      Math.min(this.width, this.height) * 0.05,
-      this.width * 0.5,
-      this.height * 0.5,
-      Math.max(this.width, this.height) * 0.85
-    );
-    bgGrad.addColorStop(0, rgbString(palette.bgInner));
-    bgGrad.addColorStop(1, rgbString(palette.bgOuter));
-    ctx.fillStyle = bgGrad;
+    // 1. Rich bioluminescent radial gradient background (cached when palette & viewport unchanged)
+    const innerCol = rgbString(palette.bgInner);
+    const outerCol = rgbString(palette.bgOuter);
+    const bgKey = `${this.width}x${this.height}|${innerCol}|${outerCol}`;
+    if (bgKey !== this._bgGradKey || !this._bgGrad) {
+      this._bgGradKey = bgKey;
+      const bgGrad = ctx.createRadialGradient(
+        this.width * 0.5,
+        this.height * 0.45,
+        Math.min(this.width, this.height) * 0.05,
+        this.width * 0.5,
+        this.height * 0.5,
+        Math.max(this.width, this.height) * 0.85
+      );
+      bgGrad.addColorStop(0, innerCol);
+      bgGrad.addColorStop(1, outerCol);
+      this._bgGrad = bgGrad;
+    }
+    ctx.fillStyle = this._bgGrad;
     ctx.fillRect(0, 0, this.width, this.height);
 
     // 1b. Distinct atmospheric background layer per scale
@@ -1555,8 +1665,17 @@ class GlooGame {
     ctx.scale(this.camera.zoom, this.camera.zoom);
     ctx.translate(-this.camera.x, -this.camera.y);
 
-    // 4. Ecosystem entities
-    this.ecosystem.draw(ctx, this.blob, this.time);
+    // Compute world-space visible bounds for fast viewport culling & sub-5px LOD
+    const halfViewW = (this.width * 0.5) / this.camera.zoom;
+    const halfViewH = (this.height * 0.5) / this.camera.zoom;
+    this._viewBounds.minX = this.camera.x - halfViewW;
+    this._viewBounds.maxX = this.camera.x + halfViewW;
+    this._viewBounds.minY = this.camera.y - halfViewH;
+    this._viewBounds.maxY = this.camera.y + halfViewH;
+    this._viewBounds.zoom = this.camera.zoom;
+
+    // 4. Ecosystem entities (viewport-culled + LOD)
+    this.ecosystem.draw(ctx, this.blob, this.time, this._viewBounds);
 
     // 5. Lava spit / solar plasma projectiles
     this.drawProjectiles(ctx);
@@ -1595,6 +1714,22 @@ class GlooGame {
     const rawDt = (now - this.lastFrameTime) / 1000;
     this.lastFrameTime = now;
     const dt = Math.min(rawDt, 0.05); // Clamp to avoid huge jumps on tab switch
+
+    // Adaptive performance scaler: if sustained avg frame time > 24ms (< 42 FPS) for ~1.5s, step down DPR & motes
+    if (this.state === STATE.PLAYING && this.perfTier < 2 && rawDt > 0 && rawDt < 0.25) {
+      const frameMs = rawDt * 1000;
+      this._perfAvgMs = this._perfAvgMs * 0.9 + frameMs * 0.1;
+      if (this._perfCooldown > 0) {
+        this._perfCooldown -= dt;
+      } else if (this._perfAvgMs > 24) {
+        this._perfSlowTime += dt;
+        if (this._perfSlowTime >= 1.5) {
+          this._stepDownPerformance();
+        }
+      } else {
+        this._perfSlowTime = Math.max(0, this._perfSlowTime - dt * 0.5);
+      }
+    }
 
     this.update(dt);
     this.render();

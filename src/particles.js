@@ -7,9 +7,9 @@
 
 import { rgbString } from './scales.js';
 
-const MOTE_COUNT = 52;
-const MAX_PARTICLES = 260;
-const MAX_RINGS = 32;
+const DEFAULT_MOTE_COUNT = 52;
+const DEFAULT_MAX_PARTICLES = 260;
+const DEFAULT_MAX_RINGS = 32;
 
 function rand(min, max) {
   return min + Math.random() * (max - min);
@@ -27,32 +27,82 @@ export class ParticleSystem {
     this.rings = [];
     this._lastW = 1000;
     this._lastH = 1000;
+    this.moteCount = DEFAULT_MOTE_COUNT;
+    this.maxParticles = DEFAULT_MAX_PARTICLES;
+    this.maxRings = DEFAULT_MAX_RINGS;
+    this.burstScale = 1;
+    this._replaceCursor = 0;
     this._initMotes();
+  }
+
+  /**
+   * Tune mote & burst budgets for mobile vs desktop or adaptive performance tiers.
+   */
+  configure({ isMobile = false, moteCount, maxParticles, maxRings, burstScale } = {}) {
+    this.maxParticles = Number.isFinite(maxParticles)
+      ? maxParticles
+      : (isMobile ? 70 : DEFAULT_MAX_PARTICLES);
+    this.maxRings = Number.isFinite(maxRings)
+      ? maxRings
+      : (isMobile ? 16 : DEFAULT_MAX_RINGS);
+    this.burstScale = Number.isFinite(burstScale)
+      ? burstScale
+      : (isMobile ? 0.68 : 1);
+
+    if (this.particles.length > this.maxParticles) {
+      this.particles.length = this.maxParticles;
+    }
+    if (this.rings.length > this.maxRings) {
+      this.rings.length = this.maxRings;
+    }
+
+    const targetMotes = Number.isFinite(moteCount)
+      ? moteCount
+      : (isMobile ? 30 : DEFAULT_MOTE_COUNT);
+    this.setMoteCount(targetMotes);
+  }
+
+  setMoteCount(count) {
+    const next = Math.max(0, Math.min(80, Math.round(count)));
+    if (next === this.moteCount && this.motes.length === next) return;
+    this.moteCount = next;
+    if (this.motes.length > next) {
+      this.motes.length = next;
+    } else {
+      while (this.motes.length < next) {
+        this.motes.push(this._makeMote(this.motes.length));
+      }
+    }
+  }
+
+  _makeMote(i) {
+    // 3 depth strata for subtle parallax
+    const layer = i % 3;
+    const depth = layer === 0 ? rand(0.22, 0.42) : layer === 1 ? rand(0.48, 0.72) : rand(0.76, 1.0);
+    return {
+      nx: Math.random(),
+      ny: Math.random(),
+      depth,
+      radius: (1.1 + depth * 2.1) * rand(0.75, 1.25),
+      vx: rand(-0.008, 0.008) * depth,
+      vy: rand(-0.011, 0.005) * depth,
+      phase: rand(0, Math.PI * 2),
+      twinkleSpeed: rand(1.1, 2.6),
+      alpha: rand(0.22, 0.62) * (0.55 + depth * 0.45),
+    };
   }
 
   _initMotes() {
     this.motes = [];
-    for (let i = 0; i < MOTE_COUNT; i++) {
-      // 3 depth strata for subtle parallax
-      const layer = i % 3;
-      const depth = layer === 0 ? rand(0.22, 0.42) : layer === 1 ? rand(0.48, 0.72) : rand(0.76, 1.0);
-      this.motes.push({
-        nx: Math.random(),
-        ny: Math.random(),
-        depth,
-        radius: (1.1 + depth * 2.1) * rand(0.75, 1.25),
-        vx: rand(-0.008, 0.008) * depth,
-        vy: rand(-0.011, 0.005) * depth,
-        phase: rand(0, Math.PI * 2),
-        twinkleSpeed: rand(1.1, 2.6),
-        alpha: rand(0.22, 0.62) * (0.55 + depth * 0.45),
-      });
+    for (let i = 0; i < this.moteCount; i++) {
+      this.motes.push(this._makeMote(i));
     }
   }
 
   reset() {
     this.particles.length = 0;
     this.rings.length = 0;
+    this._replaceCursor = 0;
     this._initMotes();
   }
 
@@ -61,7 +111,7 @@ export class ParticleSystem {
    */
   spawnEatBurst(x, y, radius, color = '#67e8f9', accent = '#ffffff', count = 14) {
     const r = Math.max(2, radius);
-    const n = Math.max(4, Math.min(36, Math.round(count)));
+    const n = Math.max(4, Math.min(36, Math.round(count * this.burstScale)));
 
     for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2 + rand(-0.35, 0.35);
@@ -351,14 +401,16 @@ export class ParticleSystem {
   }
 
   _pushParticle(p) {
-    if (this.particles.length >= MAX_PARTICLES) {
-      this.particles.shift();
+    if (this.particles.length >= this.maxParticles) {
+      this.particles[this._replaceCursor % this.particles.length] = p;
+      this._replaceCursor = (this._replaceCursor + 1) % this.maxParticles;
+      return;
     }
     this.particles.push(p);
   }
 
   _pushRing(ring) {
-    if (this.rings.length >= MAX_RINGS) {
+    if (this.rings.length >= this.maxRings) {
       this.rings.shift();
     }
     this.rings.push(ring);
@@ -433,31 +485,37 @@ export class ParticleSystem {
   drawBackgroundMotes(ctx, width, height, palette, time = 0) {
     this._lastW = width;
     this._lastH = height;
+    const count = this.motes.length;
+    if (count === 0) return;
 
     const moteRGB = (palette && palette.moteColor) ? palette.moteColor : [140, 235, 225];
     const haloColor = rgbString(moteRGB, 0.16);
     const coreColor = rgbString(moteRGB, 0.85);
 
     ctx.save();
-    for (let i = 0; i < this.motes.length; i++) {
+    // Pass 1: all soft outer halos (single fillStyle state)
+    ctx.fillStyle = haloColor;
+    for (let i = 0; i < count; i++) {
       const m = this.motes[i];
-      const x = m.nx * width;
-      const y = m.ny * height;
       const twinkle = 0.6 + 0.4 * Math.sin(time * m.twinkleSpeed + m.phase);
-      const a = m.alpha * twinkle;
-      const r = m.radius * (0.9 + 0.18 * twinkle);
+      m._tx = m.nx * width;
+      m._ty = m.ny * height;
+      m._ta = m.alpha * twinkle;
+      m._tr = m.radius * (0.9 + 0.18 * twinkle);
 
-      // Soft outer halo
-      ctx.globalAlpha = a;
-      ctx.fillStyle = haloColor;
+      ctx.globalAlpha = m._ta;
       ctx.beginPath();
-      ctx.arc(x, y, r * 3.1, 0, Math.PI * 2);
+      ctx.arc(m._tx, m._ty, m._tr * 3.1, 0, Math.PI * 2);
       ctx.fill();
+    }
 
-      // Luminous core
-      ctx.fillStyle = coreColor;
+    // Pass 2: all luminous cores (single fillStyle state)
+    ctx.fillStyle = coreColor;
+    for (let i = 0; i < count; i++) {
+      const m = this.motes[i];
+      ctx.globalAlpha = m._ta;
       ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.arc(m._tx, m._ty, m._tr, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();

@@ -9,9 +9,8 @@ import { drawMicroSkin } from './skins/microSkins.js';
 import { drawMacroSkin } from './skins/macroSkins.js';
 import { drawCosmicSkin } from './skins/cosmicSkins.js';
 
-const TARGET_POPULATION = 42;
-const MIN_POPULATION = 36;
-const MAX_POPULATION = 46;
+const DESKTOP_TARGET_POPULATION = 42;
+const MOBILE_TARGET_POPULATION = 26;
 
 const DIFFICULTY_PRESETS = {
   toddler: { preyRatio: 0.86, speedScale: 0.58, preyFlee: false, predatorChase: false, chaseSpeedMult: 0, showDangerHalo: false },
@@ -94,6 +93,20 @@ export class EcosystemManager {
     this._lastViewH = 0;
     this.difficulty = 'chill';
     this._diffCfg = DIFFICULTY_PRESETS.chill;
+    this.targetPopulation = DESKTOP_TARGET_POPULATION;
+    this.minPopulation = 36;
+    this.maxPopulation = 46;
+  }
+
+  setMobileMode(isMobile) {
+    this.setPopulationCap(isMobile ? MOBILE_TARGET_POPULATION : DESKTOP_TARGET_POPULATION);
+  }
+
+  setPopulationCap(target) {
+    const t = Math.max(14, Math.min(50, Math.round(target)));
+    this.targetPopulation = t;
+    this.minPopulation = Math.max(10, t - 4);
+    this.maxPopulation = t + 4;
   }
 
   setDifficulty(mode) {
@@ -114,8 +127,8 @@ export class EcosystemManager {
     const viewH = this._lastViewH > 0 ? this._lastViewH : player.size * 26;
     const viewRadius = Math.hypot(viewW, viewH) * 0.5;
 
-    for (let i = 0; i < TARGET_POPULATION; i++) {
-      const wantPrey = i < Math.round(TARGET_POPULATION * this._diffCfg.preyRatio);
+    for (let i = 0; i < this.targetPopulation; i++) {
+      const wantPrey = i < Math.round(this.targetPopulation * this._diffCfg.preyRatio);
       const minDist = wantPrey ? player.size * 3.4 : player.size * 6.8;
       const maxDist = Math.max(minDist * 1.4, viewRadius * 1.15);
       const dist = rand(minDist, maxDist);
@@ -154,7 +167,7 @@ export class EcosystemManager {
     const viewW = this._lastViewW > 0 ? this._lastViewW : player.size * 26;
     const viewH = this._lastViewH > 0 ? this._lastViewH : player.size * 26;
     const viewRadius = Math.hypot(viewW, viewH) * 0.5;
-    const needed = Math.max(0, TARGET_POPULATION - this.entities.length);
+    const needed = Math.max(0, this.targetPopulation - this.entities.length);
 
     for (let i = 0; i < needed; i++) {
       const wantPrey = i < Math.round(needed * this._diffCfg.preyRatio);
@@ -376,9 +389,9 @@ export class EcosystemManager {
     }
 
     // --- Maintain balanced population around viewport edge ---
-    const needed = TARGET_POPULATION - this.entities.length;
-    if (needed > 0 && this.entities.length < MAX_POPULATION) {
-      const spawnsThisFrame = Math.min(needed, this.entities.length < MIN_POPULATION ? 4 : 2);
+    const needed = this.targetPopulation - this.entities.length;
+    if (needed > 0 && this.entities.length < this.maxPopulation) {
+      const spawnsThisFrame = Math.min(needed, this.entities.length < this.minPopulation ? 4 : 2);
       for (let s = 0; s < spawnsThisFrame; s++) {
         const total = preyCount + predatorCount;
         const currentPreyRatio = total > 0 ? preyCount / total : 0;
@@ -509,14 +522,22 @@ export class EcosystemManager {
   }
 
   /**
-   * Render all living entities with gameplay readability halos and handcrafted art.
+   * Render all visible living entities with gameplay readability halos,
+   * viewport culling, and LOD fast-path for tiny distant specks.
    */
-  draw(ctx, player, time = 0) {
+  draw(ctx, player, time = 0, viewBounds = null) {
     if (this.entities.length === 0) return;
 
     const px = player ? player.x : 0;
     const py = player ? player.y : 0;
     const pSize = player ? player.size : 10;
+
+    const hasCull = viewBounds !== null;
+    const minX = hasCull ? viewBounds.minX : -Infinity;
+    const maxX = hasCull ? viewBounds.maxX : Infinity;
+    const minY = hasCull ? viewBounds.minY : -Infinity;
+    const maxY = hasCull ? viewBounds.maxY : Infinity;
+    const zoom = hasCull && viewBounds.zoom > 0 ? viewBounds.zoom : 0;
 
     // Sort smaller first so imposing predators render crisply above tiny prey
     this.entities.sort((a, b) => a.size - b.size);
@@ -525,10 +546,36 @@ export class EcosystemManager {
       const e = this.entities[i];
       if (!e.alive || e.alpha <= 0.01) continue;
 
+      // Fast AABB viewport culling (skip completely offscreen entities)
+      if (hasCull) {
+        const pad = e.species.kind === 'comet' ? e.size * 4.5 : e.size * 2.2;
+        if (e.x + pad < minX || e.x - pad > maxX || e.y + pad < minY || e.y - pad > maxY) {
+          continue;
+        }
+      }
+
       const dx = e.x - px;
       const dy = e.y - py;
-      const dist = Math.hypot(dx, dy);
+      const distSq = dx * dx + dy * dy;
       const sizeRatio = e.size / pSize;
+
+      // LOD fast-path: skip 40+ canvas calls for tiny sub-5px specks
+      if (zoom > 0 && e.size * zoom < 5) {
+        ctx.save();
+        ctx.globalAlpha = e.alpha;
+        ctx.fillStyle = e.species.color;
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.size * 0.92, 0, TWO_PI);
+        ctx.fill();
+        if (e.species.accent) {
+          ctx.fillStyle = e.species.accent;
+          ctx.beginPath();
+          ctx.arc(e.x - e.size * 0.2, e.y - e.size * 0.2, e.size * 0.36, 0, TWO_PI);
+          ctx.fill();
+        }
+        ctx.restore();
+        continue;
+      }
 
       ctx.save();
       ctx.globalAlpha = e.alpha;
@@ -537,7 +584,8 @@ export class EcosystemManager {
       // --- Gameplay Readability Halos ---
       if (sizeRatio < EDIBLE_RATIO) {
         const edibleRange = pSize * 7.2 + e.size;
-        if (dist < edibleRange) {
+        if (distSq < edibleRange * edibleRange) {
+          const dist = Math.sqrt(distSq);
           const proximity = 1 - dist / edibleRange;
           const pulse = 0.65 + 0.35 * Math.sin(time * 4.2 + e.phase);
           const rimAlpha = proximity * proximity * 0.34 * pulse;
@@ -554,7 +602,8 @@ export class EcosystemManager {
         }
       } else if (this._diffCfg.showDangerHalo && sizeRatio > PREDATOR_RATIO) {
         const warnRange = e.size * 3.4 + pSize * 6.5;
-        if (dist < warnRange) {
+        if (distSq < warnRange * warnRange) {
+          const dist = Math.sqrt(distSq);
           const proximity = 1 - dist / warnRange;
           const chaseBoost = e.chaseTimer > 0 ? 1.35 : 1.0;
           const pulseSpeed = e.chaseTimer > 0 ? 6.5 : 3.6;
@@ -622,7 +671,6 @@ function drawSpecies(ctx, e, time) {
   const ph = e.phase;
   const kind = e.species.kind;
 
-  ctx.save();
   if (isDirectionalSpecies(kind)) {
     ctx.rotate(e.angle);
   }
@@ -636,5 +684,4 @@ function drawSpecies(ctx, e, time) {
     ctx.arc(0, 0, r * 0.85, 0, TWO_PI);
     ctx.fill();
   }
-  ctx.restore();
 }
