@@ -800,7 +800,7 @@ class GlooGame {
    * dissolves old scale & seeds fresh new-scale species, holds softly until tapped,
    * then parts smoothly over ~0.95s).
    */
-  startScaleTransition(fromScale, toScale) {
+  startScaleTransition(fromScale, toScale, unlockedPowerLvl = 0) {
     this.ecosystem.dissolveOldScale(toScale);
     this.ecosystem.seedScale(this.blob, toScale);
     this.projectiles.length = 0;
@@ -814,6 +814,9 @@ class GlooGame {
         this.blob.invulnTimer = Math.max(this.blob.invulnTimer, 1.4);
         this.camera.zoom = this.getTargetPlayerScreenRadius() / this.blob.size;
         this.updateDangerState();
+        if (unlockedPowerLvl > 0) {
+          this.story.trigger(`power_lv${unlockedPowerLvl}`);
+        }
       });
       return;
     }
@@ -969,6 +972,7 @@ class GlooGame {
     };
 
     if (this.cutscenesEnabled) {
+      this.cutscenes.preloadAll();
       this.playCutscene('intro', beginPlay);
     } else {
       beginPlay();
@@ -1599,22 +1603,30 @@ class GlooGame {
       if (ascending && newScaleIdx > this.highestScaleIndex) {
         this.highestScaleIndex = newScaleIdx;
         this.audio.playScaleUp();
-        const pal = getBlendedPalette(newProgress);
-        this.particles.spawnScaleBurst(
-          this.blob.x,
-          this.blob.y,
-          this.blob.size * 2.2,
-          rgbString(pal.blobGlow)
-        );
-        this.showScaleBanner(newScaleIdx);
-        this.startScaleTransition(prevScaleIdx, newScaleIdx);
 
         const nextPowerLvl = this.getPowerLevel(newScaleIdx);
+        let unlockedPowerLvl = 0;
         if (nextPowerLvl > this.powerLevel) {
           this.powerLevel = nextPowerLvl;
           this.updatePowerLevelUI(nextPowerLvl, true);
           this.audio.playPowerUnlock?.(nextPowerLvl);
-          this.story.trigger(`power_lv${nextPowerLvl}`);
+          unlockedPowerLvl = nextPowerLvl;
+        }
+
+        if (this.cutscenesEnabled) {
+          this.startScaleTransition(prevScaleIdx, newScaleIdx, unlockedPowerLvl);
+        } else {
+          const pal = getBlendedPalette(newProgress);
+          this.particles.spawnScaleBurst(
+            this.blob.x,
+            this.blob.y,
+            this.blob.size * 2.2,
+            rgbString(pal.blobGlow)
+          );
+          this.startScaleTransition(prevScaleIdx, newScaleIdx, unlockedPowerLvl);
+          if (unlockedPowerLvl > 0) {
+            this.story.trigger(`power_lv${unlockedPowerLvl}`);
+          }
         }
       }
     }

@@ -2111,10 +2111,7 @@ export class CutsceneManager {
     const t = Number.isFinite(time) ? time : this.shotTime;
 
     ctx.save();
-    const drewArt = this._drawIllustratedShot(ctx, width, height, t);
-    if (!drewArt) {
-      shot.draw(ctx, width, height, t, this.shotTime);
-    }
+    this._drawIllustratedShot(ctx, width, height, t);
 
     // Soft storybook vignette framing the animated scene
     const maxR = Math.hypot(width, height) * 0.62;
@@ -2141,11 +2138,35 @@ export class CutsceneManager {
     ctx.restore();
   }
 
+  preloadAll() {
+    if (typeof Image === 'undefined') return;
+    const all = [
+      ['intro_win', './assets/art/scene-intro-window.jpg'],
+      ['charlie', './assets/art/charlie-portrait.jpg'],
+      ['intro_plunge', './assets/art/scene-intro-plunge.jpg'],
+      ['q_break', './assets/art/scene-quantum-break.jpg'],
+      ['micro', './assets/art/cutscene-micro.jpg'],
+      ['forest', './assets/art/cutscene-forest.jpg'],
+      ['f_friends', './assets/art/scene-forest-friends.jpg'],
+      ['c_rise', './assets/art/scene-city-rise.jpg'],
+      ['city', './assets/art/cutscene-city.jpg'],
+      ['planets', './assets/art/cutscene-planets.jpg'],
+      ['p_dance', './assets/art/scene-planetary-dance.jpg'],
+      ['nebula', './assets/art/scene-nebula-glide.jpg'],
+      ['star_call', './assets/art/scene-star-call.jpg'],
+      ['cosmos', './assets/art/cutscene-cosmos.jpg'],
+      ['landscape', './assets/art/keyart-landscape.jpg'],
+      ['goodnight', './assets/art/scene-goodnight-window.jpg'],
+    ];
+    for (const [k, src] of all) this._getArtImage(k, src);
+  }
+
   _getArtImage(key, src) {
     if (typeof Image === 'undefined') return null;
     if (!this._artCache) this._artCache = Object.create(null);
     if (!this._artCache[key]) {
       const img = new Image();
+      img.decoding = 'async';
       img.src = src;
       this._artCache[key] = img;
     }
@@ -2190,14 +2211,20 @@ export class CutsceneManager {
 
     const list = SHOTS_ART[this.id];
     const spec = list && list[this.shotIndex];
-    if (!spec) return false;
-
-    // Preload next shot in this cutscene so transitions never flicker
-    const nextSpec = list[this.shotIndex + 1];
-    if (nextSpec) this._getArtImage(nextSpec.key, nextSpec.src);
+    if (!spec) {
+      ctx.fillStyle = '#07141c';
+      ctx.fillRect(0, 0, width, height);
+      return;
+    }
 
     const img = this._getArtImage(spec.key, spec.src);
-    if (!img) return false;
+    if (!img) {
+      // Smooth dark starry canvas while decoding — never flash the old procedural scene!
+      ctx.fillStyle = '#07141c';
+      ctx.fillRect(0, 0, width, height);
+      this._drawSceneAtmosphere(ctx, width, height, time, spec.fx);
+      return;
+    }
 
     const p = clamp(this.shotTime / 7.5, 0, 1);
     const zoom = spec.zoomStart + (spec.zoomEnd - spec.zoomStart) * p;
@@ -2209,7 +2236,6 @@ export class CutsceneManager {
 
     ctx.drawImage(img, dx, dy, dw, dh);
     this._drawSceneAtmosphere(ctx, width, height, time, spec.fx);
-    return true;
   }
 
   _drawSparkle4(ctx, x, y, r, color) {
