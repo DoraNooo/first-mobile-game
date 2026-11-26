@@ -2154,47 +2154,47 @@ export class CutsceneManager {
   }
 
   _drawIllustratedShot(ctx, width, height, time) {
-    // Every single cutscene shot uses our cohesive Miyazaki storybook paintings with bespoke Ken Burns motion!
-    const isPortrait = height > width;
-    const keyArt = isPortrait ? './assets/art/keyart-portrait.jpg' : './assets/art/keyart-landscape.jpg';
-    const keyName = isPortrait ? 'portrait' : 'landscape';
-
+    // 16 shots = 16 completely unique Miyazaki storybook paintings (ZERO repeats!) + living animations!
     const SHOTS_ART = {
       intro: [
-        { key: keyName, src: keyArt, zoomStart: 1.03, zoomEnd: 1.14, panX: 0, panY: isPortrait ? 0.04 : -0.02 },
-        { key: 'charlie', src: './assets/art/charlie-portrait.jpg', zoomStart: 1.0, zoomEnd: 1.15, panX: 0, panY: 0 },
-        { key: 'landscape', src: './assets/art/keyart-landscape.jpg', zoomStart: 1.18, zoomEnd: 1.05, panX: 0.08, panY: 0 },
+        { key: 'intro_win', src: './assets/art/scene-intro-window.jpg', fx: 'window', zoomStart: 1.02, zoomEnd: 1.12, panX: 0, panY: -0.02 },
+        { key: 'charlie', src: './assets/art/charlie-portrait.jpg', fx: 'quantum', zoomStart: 1.0, zoomEnd: 1.14, panX: 0, panY: 0 },
+        { key: 'intro_plunge', src: './assets/art/scene-intro-plunge.jpg', fx: 'quantum', zoomStart: 1.04, zoomEnd: 1.16, panX: 0, panY: 0.04 },
       ],
       scale_1: [
-        { key: 'micro', src: './assets/art/cutscene-micro.jpg', zoomStart: 1.14, zoomEnd: 1.04, panX: 0.04, panY: 0 },
-        { key: 'micro', src: './assets/art/cutscene-micro.jpg', zoomStart: 1.04, zoomEnd: 1.14, panX: -0.05, panY: -0.02 },
+        { key: 'q_break', src: './assets/art/scene-quantum-break.jpg', fx: 'quantum', zoomStart: 1.04, zoomEnd: 1.14, panX: -0.04, panY: 0 },
+        { key: 'micro', src: './assets/art/cutscene-micro.jpg', fx: 'micro', zoomStart: 1.03, zoomEnd: 1.13, panX: -0.03, panY: -0.02 },
       ],
       scale_2: [
-        { key: 'forest', src: './assets/art/cutscene-forest.jpg', zoomStart: 1.14, zoomEnd: 1.04, panX: 0.03, panY: 0.03 },
-        { key: 'forest', src: './assets/art/cutscene-forest.jpg', zoomStart: 1.04, zoomEnd: 1.14, panX: -0.05, panY: -0.03 },
+        { key: 'forest', src: './assets/art/cutscene-forest.jpg', fx: 'forest', zoomStart: 1.04, zoomEnd: 1.14, panX: 0, panY: -0.03 },
+        { key: 'f_friends', src: './assets/art/scene-forest-friends.jpg', fx: 'forest', zoomStart: 1.03, zoomEnd: 1.13, panX: -0.03, panY: -0.02 },
       ],
       scale_3: [
-        { key: 'city', src: './assets/art/cutscene-city.jpg', zoomStart: 1.14, zoomEnd: 1.04, panX: 0.04, panY: 0.02 },
-        { key: 'city', src: './assets/art/cutscene-city.jpg', zoomStart: 1.04, zoomEnd: 1.14, panX: -0.05, panY: -0.02 },
+        { key: 'c_rise', src: './assets/art/scene-city-rise.jpg', fx: 'city', zoomStart: 1.03, zoomEnd: 1.14, panX: 0, panY: -0.04 },
+        { key: 'city', src: './assets/art/cutscene-city.jpg', fx: 'city', zoomStart: 1.04, zoomEnd: 1.14, panX: -0.04, panY: -0.01 },
       ],
       scale_4: [
-        { key: 'planets', src: './assets/art/cutscene-planets.jpg', zoomStart: 1.14, zoomEnd: 1.04, panX: 0, panY: 0.04 },
-        { key: 'planets', src: './assets/art/cutscene-planets.jpg', zoomStart: 1.04, zoomEnd: 1.14, panX: -0.04, panY: -0.03 },
+        { key: 'planets', src: './assets/art/cutscene-planets.jpg', fx: 'space', zoomStart: 1.04, zoomEnd: 1.14, panX: 0, panY: -0.03 },
+        { key: 'p_dance', src: './assets/art/scene-planetary-dance.jpg', fx: 'space', zoomStart: 1.03, zoomEnd: 1.14, panX: -0.04, panY: 0 },
       ],
       scale_5: [
-        { key: 'cosmos', src: './assets/art/cutscene-cosmos.jpg', zoomStart: 1.16, zoomEnd: 1.05, panX: 0.05, panY: 0 },
-        { key: 'cosmos', src: './assets/art/cutscene-cosmos.jpg', zoomStart: 1.05, zoomEnd: 1.14, panX: -0.04, panY: 0 },
+        { key: 'nebula', src: './assets/art/scene-nebula-glide.jpg', fx: 'space', zoomStart: 1.04, zoomEnd: 1.15, panX: -0.04, panY: 0 },
+        { key: 'star_call', src: './assets/art/scene-star-call.jpg', fx: 'space', zoomStart: 1.03, zoomEnd: 1.14, panX: -0.03, panY: 0 },
       ],
       victory: [
-        { key: 'cosmos', src: './assets/art/cutscene-cosmos.jpg', zoomStart: 1.04, zoomEnd: 1.16, panX: 0, panY: 0 },
-        { key: 'landscape', src: './assets/art/keyart-landscape.jpg', zoomStart: 1.05, zoomEnd: 1.16, panX: -0.05, panY: 0 },
-        { key: keyName, src: keyArt, zoomStart: 1.14, zoomEnd: 1.02, panX: 0, panY: isPortrait ? -0.04 : 0 },
+        { key: 'cosmos', src: './assets/art/cutscene-cosmos.jpg', fx: 'space', zoomStart: 1.03, zoomEnd: 1.15, panX: 0, panY: 0 },
+        { key: 'landscape', src: './assets/art/keyart-landscape.jpg', fx: 'forest', zoomStart: 1.04, zoomEnd: 1.16, panX: -0.05, panY: 0 },
+        { key: 'goodnight', src: './assets/art/scene-goodnight-window.jpg', fx: 'window', zoomStart: 1.12, zoomEnd: 1.01, panX: 0, panY: -0.02 },
       ],
     };
 
     const list = SHOTS_ART[this.id];
     const spec = list && list[this.shotIndex];
     if (!spec) return false;
+
+    // Preload next shot in this cutscene so transitions never flicker
+    const nextSpec = list[this.shotIndex + 1];
+    if (nextSpec) this._getArtImage(nextSpec.key, nextSpec.src);
 
     const img = this._getArtImage(spec.key, spec.src);
     if (!img) return false;
@@ -2208,21 +2208,175 @@ export class CutsceneManager {
     const dy = (height - dh) * 0.5 + height * spec.panY * p;
 
     ctx.drawImage(img, dx, dy, dw, dh);
-
-    // Overlay living bioluminescent fireflies / stardust so every painting breathes!
-    for (let i = 0; i < 18; i++) {
-      const fx = ((i * 0.173 + time * (0.012 + (i % 3) * 0.005)) % 1) * width;
-      const fy = ((i * 0.291 - time * (0.018 + (i % 4) * 0.004) + 10) % 1) * height;
-      const twinkle = 0.25 + 0.75 * (0.5 + 0.5 * Math.sin(time * 2.6 + i * 1.7));
-      const r = 1.6 + (i % 3) * 1.1;
-      ctx.fillStyle = i % 2 === 0
-        ? `rgba(255, 232, 165, ${(0.35 + twinkle * 0.45).toFixed(3)})`
-        : `rgba(125, 240, 224, ${(0.25 + twinkle * 0.35).toFixed(3)})`;
-      ctx.beginPath();
-      ctx.arc(fx, fy, r, 0, TWO_PI);
-      ctx.fill();
-    }
-
+    this._drawSceneAtmosphere(ctx, width, height, time, spec.fx);
     return true;
+  }
+
+  _drawSparkle4(ctx, x, y, r, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x, y - r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.quadraticCurveTo(x, y, x, y + r);
+    ctx.quadraticCurveTo(x, y, x - r, y);
+    ctx.quadraticCurveTo(x, y, x, y - r);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  _drawSceneAtmosphere(ctx, w, h, t, fx) {
+    if (fx === 'window') {
+      // Warm breathing glow from the windowsill lava lamp
+      const pulse = 0.5 + 0.5 * Math.sin(t * 2.1);
+      const lx = w * 0.5;
+      const ly = h * 0.66;
+      const lr = Math.min(w, h) * (0.24 + pulse * 0.04);
+      const lg = ctx.createRadialGradient(lx, ly, 4, lx, ly, lr);
+      lg.addColorStop(0, `rgba(255, 198, 120, ${(0.16 + pulse * 0.08).toFixed(3)})`);
+      lg.addColorStop(1, 'rgba(255, 148, 92, 0)');
+      ctx.fillStyle = lg;
+      ctx.beginPath();
+      ctx.arc(lx, ly, lr, 0, TWO_PI);
+      ctx.fill();
+
+      // Twinkling 4-point stars in the open night window + soft moonlight dust
+      for (let i = 0; i < 8; i++) {
+        const sx = w * (0.34 + ((i * 0.137) % 0.32));
+        const sy = h * (0.14 + ((i * 0.191) % 0.34));
+        const tw = 0.25 + 0.75 * (0.5 + 0.5 * Math.sin(t * (2.2 + i * 0.4) + i * 1.9));
+        this._drawSparkle4(ctx, sx, sy, 3.5 + tw * 5.5, `rgba(255, 244, 196, ${(0.35 + tw * 0.55).toFixed(3)})`);
+      }
+      for (let i = 0; i < 12; i++) {
+        const mx = ((i * 0.19 + t * 0.008) % 1) * w;
+        const my = ((i * 0.27 - t * 0.01 + 10) % 1) * h;
+        ctx.fillStyle = 'rgba(220, 240, 255, 0.22)';
+        ctx.beginPath();
+        ctx.arc(mx, my, 1.4 + (i % 2), 0, TWO_PI);
+        ctx.fill();
+      }
+    } else if (fx === 'micro') {
+      // Rising glossy underwater bubbles + gentle swaying caustic light shafts
+      ctx.save();
+      for (let i = 0; i < 3; i++) {
+        const rx = w * (0.2 + i * 0.3) + Math.sin(t * 0.6 + i) * 28;
+        const g = ctx.createLinearGradient(rx, 0, rx + 50, h);
+        g.addColorStop(0, 'rgba(134, 239, 172, 0.09)');
+        g.addColorStop(1, 'rgba(94, 234, 212, 0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(rx - 22, 0);
+        ctx.lineTo(rx + 28, 0);
+        ctx.lineTo(rx + 95, h);
+        ctx.lineTo(rx + 15, h);
+        ctx.closePath();
+        ctx.fill();
+      }
+      for (let i = 0; i < 16; i++) {
+        const bx = ((i * 0.173) % 1) * w + Math.sin(t * 1.6 + i * 1.4) * 14;
+        const by = (1 - ((i * 0.23 + t * (0.045 + (i % 3) * 0.015)) % 1)) * h;
+        const br = 2.6 + (i % 4) * 1.8;
+        ctx.strokeStyle = 'rgba(204, 251, 241, 0.42)';
+        ctx.lineWidth = 1.1;
+        ctx.beginPath();
+        ctx.arc(bx, by, br, 0, TWO_PI);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+        ctx.beginPath();
+        ctx.arc(bx - br * 0.3, by - br * 0.3, br * 0.25, 0, TWO_PI);
+        ctx.fill();
+      }
+      ctx.restore();
+    } else if (fx === 'forest') {
+      // Living golden fireflies weaving organically in the night breeze
+      for (let i = 0; i < 18; i++) {
+        const baseX = ((i * 0.161 + 0.05) % 0.92) * w;
+        const baseY = ((i * 0.247 + 0.08) % 0.84) * h;
+        const fxX = baseX + Math.sin(t * (0.9 + (i % 3) * 0.25) + i * 2.1) * 28;
+        const fxY = baseY + Math.cos(t * (1.2 + (i % 4) * 0.2) + i * 1.3) * 20;
+        const glow = 0.2 + 0.8 * (0.5 + 0.5 * Math.sin(t * (2.6 + (i % 3) * 0.7) + i * 1.7));
+        const r = 2.0 + (i % 3) * 1.0;
+        const g = ctx.createRadialGradient(fxX, fxY, 0.5, fxX, fxY, r * 4.2);
+        g.addColorStop(0, `rgba(254, 240, 138, ${(0.75 * glow).toFixed(3)})`);
+        g.addColorStop(1, 'rgba(253, 224, 71, 0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(fxX, fxY, r * 4.2, 0, TWO_PI);
+        ctx.fill();
+      }
+    } else if (fx === 'city') {
+      // Drifting warm paper sky-lanterns swaying upward in the wind + twinkling stars
+      for (let i = 0; i < 10; i++) {
+        const lx = ((i * 0.193 + 0.06) % 0.88) * w + Math.sin(t * 0.9 + i * 1.5) * 18;
+        const ly = (1 - ((i * 0.21 + t * (0.025 + (i % 3) * 0.008)) % 1)) * h;
+        const lr = 3.2 + (i % 3) * 1.5;
+        const g = ctx.createRadialGradient(lx, ly, 1, lx, ly, lr * 3.4);
+        g.addColorStop(0, 'rgba(255, 224, 150, 0.65)');
+        g.addColorStop(1, 'rgba(255, 160, 90, 0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(lx, ly, lr * 3.4, 0, TWO_PI);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255, 238, 195, 0.78)';
+        ctx.beginPath();
+        ctx.ellipse(lx, ly, lr * 0.75, lr, 0, 0, TWO_PI);
+        ctx.fill();
+      }
+      for (let i = 0; i < 8; i++) {
+        const sx = ((i * 0.217 + 0.08) % 0.88) * w;
+        const sy = ((i * 0.149 + 0.06) % 0.42) * h;
+        const tw = 0.2 + 0.8 * (0.5 + 0.5 * Math.sin(t * 2.8 + i * 2.1));
+        this._drawSparkle4(ctx, sx, sy, 2.5 + tw * 3.8, `rgba(255, 250, 230, ${(0.3 + tw * 0.55).toFixed(3)})`);
+      }
+    } else if (fx === 'space') {
+      // Twinkling diamond stars + occasional graceful shooting star + stardust drift
+      for (let i = 0; i < 14; i++) {
+        const sx = ((i * 0.179 + 0.04) % 0.92) * w;
+        const sy = ((i * 0.263 + 0.06) % 0.86) * h;
+        const tw = 0.2 + 0.8 * (0.5 + 0.5 * Math.sin(t * (2.0 + (i % 4) * 0.5) + i * 2.3));
+        this._drawSparkle4(
+          ctx,
+          sx,
+          sy,
+          2.6 + tw * 5.2,
+          i % 3 === 0
+            ? `rgba(255, 238, 175, ${(0.35 + tw * 0.55).toFixed(3)})`
+            : `rgba(210, 245, 255, ${(0.28 + tw * 0.5).toFixed(3)})`
+        );
+      }
+      // Periodic shooting star every ~4.5s
+      const cycle = t % 4.6;
+      if (cycle < 0.75) {
+        const sp = cycle / 0.75;
+        const sx = w * (0.15 + sp * 0.55);
+        const sy = h * (0.12 + sp * 0.26);
+        const alpha = Math.sin(sp * Math.PI) * 0.85;
+        const g = ctx.createLinearGradient(sx, sy, sx - 70, sy - 32);
+        g.addColorStop(0, `rgba(255, 252, 230, ${alpha.toFixed(3)})`);
+        g.addColorStop(1, 'rgba(125, 211, 252, 0)');
+        ctx.strokeStyle = g;
+        ctx.lineWidth = 2.2;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(sx - 70, sy - 32);
+        ctx.stroke();
+      }
+    } else {
+      // Quantum sparkles & shimmering cyan-gold motes
+      for (let i = 0; i < 18; i++) {
+        const sx = ((i * 0.173 + t * (0.015 + (i % 3) * 0.005)) % 1) * w;
+        const sy = ((i * 0.291 - t * (0.02 + (i % 4) * 0.005) + 10) % 1) * h;
+        const tw = 0.25 + 0.75 * (0.5 + 0.5 * Math.sin(t * 3.0 + i * 1.7));
+        this._drawSparkle4(
+          ctx,
+          sx,
+          sy,
+          2.2 + tw * 4.0,
+          i % 2 === 0
+            ? `rgba(103, 232, 249, ${(0.35 + tw * 0.5).toFixed(3)})`
+            : `rgba(255, 224, 150, ${(0.35 + tw * 0.5).toFixed(3)})`
+        );
+      }
+    }
   }
 }
