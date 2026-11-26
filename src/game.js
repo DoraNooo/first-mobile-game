@@ -62,10 +62,7 @@ class GlooGame {
 
     this.sliderBites = document.getElementById('slider-bites');
     this.sliderBitesVal = document.getElementById('slider-bites-val');
-    this.sliderBitesTitle = document.getElementById('slider-bites-title');
-    this.sliderBitesTitleVal = document.getElementById('slider-bites-title-val');
-    this.toggleCutscenesTitle = document.getElementById('toggle-cutscenes-title');
-    this.toggleCutscenesPause = document.getElementById('toggle-cutscenes-pause');
+    this.toggleCutscenes = document.getElementById('toggle-cutscenes');
     this.diffPills = Array.from(document.querySelectorAll('.diff-pill[data-diff]'));
     this.diffDesc = document.getElementById('diff-desc');
 
@@ -84,8 +81,10 @@ class GlooGame {
 
     this.overlayTitle = document.getElementById('overlay-title');
     this.overlayPause = document.getElementById('overlay-pause');
+    this.overlayOptions = document.getElementById('overlay-options');
     this.overlayDefeat = document.getElementById('overlay-defeat');
     this.overlayVictory = document.getElementById('overlay-victory');
+    this._optionsReturnOverlay = null;
 
     this.btnAudio = document.getElementById('btn-audio');
     this.iconSoundOn = document.getElementById('icon-sound-on');
@@ -281,10 +280,6 @@ class GlooGame {
       this.sliderBites.value = str;
       this.sliderBitesVal.textContent = str;
     }
-    if (this.sliderBitesTitle && this.sliderBitesTitleVal) {
-      this.sliderBitesTitle.value = str;
-      this.sliderBitesTitleVal.textContent = str;
-    }
   }
 
   _loadCutscenesEnabled() {
@@ -298,8 +293,23 @@ class GlooGame {
   }
 
   _syncCutscenesUI() {
-    if (this.toggleCutscenesTitle) this.toggleCutscenesTitle.checked = this.cutscenesEnabled;
-    if (this.toggleCutscenesPause) this.toggleCutscenesPause.checked = this.cutscenesEnabled;
+    if (this.toggleCutscenes) this.toggleCutscenes.checked = this.cutscenesEnabled;
+  }
+
+  openOptions(fromOverlay) {
+    this._optionsReturnOverlay = fromOverlay || null;
+    this._syncBitesUI();
+    this._syncCutscenesUI();
+    this.hideAllOverlays();
+    if (this.overlayOptions) this.overlayOptions.classList.add('visible');
+  }
+
+  closeOptions() {
+    if (this.overlayOptions) this.overlayOptions.classList.remove('visible');
+    if (this._optionsReturnOverlay) {
+      this._optionsReturnOverlay.classList.add('visible');
+      this._optionsReturnOverlay = null;
+    }
   }
 
   setCutscenesEnabled(enabled) {
@@ -583,10 +593,24 @@ class GlooGame {
       this.iconSoundOff.classList.toggle('hidden', !muted);
     });
 
-    // Cutscene mode toggles (Title + Pause)
-    const onCutscenesChange = (e) => this.setCutscenesEnabled(e.target.checked);
-    if (this.toggleCutscenesTitle) this.toggleCutscenesTitle.addEventListener('change', onCutscenesChange);
-    if (this.toggleCutscenesPause) this.toggleCutscenesPause.addEventListener('change', onCutscenesChange);
+    // Cutscene mode toggle (inside Options overlay)
+    if (this.toggleCutscenes) {
+      this.toggleCutscenes.addEventListener('change', (e) => this.setCutscenesEnabled(e.target.checked));
+    }
+
+    // Dedicated Options overlay navigation
+    const btnOptionsTitle = document.getElementById('btn-options-title');
+    if (btnOptionsTitle) {
+      btnOptionsTitle.addEventListener('click', () => this.openOptions(this.overlayTitle));
+    }
+    const btnOptionsPause = document.getElementById('btn-options-pause');
+    if (btnOptionsPause) {
+      btnOptionsPause.addEventListener('click', () => this.openOptions(this.overlayPause));
+    }
+    const btnOptionsClose = document.getElementById('btn-options-close');
+    if (btnOptionsClose) {
+      btnOptionsClose.addEventListener('click', () => this.closeOptions());
+    }
 
     // Cutscene advance on tap/click + skip button
     if (this.cutsceneUI) {
@@ -654,6 +678,7 @@ class GlooGame {
   hideAllOverlays() {
     this.overlayTitle.classList.remove('visible');
     this.overlayPause.classList.remove('visible');
+    if (this.overlayOptions) this.overlayOptions.classList.remove('visible');
     this.overlayDefeat.classList.remove('visible');
     this.overlayVictory.classList.remove('visible');
   }

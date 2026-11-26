@@ -134,7 +134,7 @@
       </div>
     </div>
 
-    <!-- Title Screen Overlay -->
+    <!-- Title Screen Overlay (Clean & Minimal) -->
     <section id="overlay-title" class="overlay visible">
       <div class="overlay-card title-card">
         <p class="eyebrow">DE L'ATOME AU COSMOS</p>
@@ -142,36 +142,15 @@
         <p class="tagline">
           Guide la petite Charlie, goutte de lave lumineuse, à travers six mondes vivants.
         </p>
-
-        <div class="setup-panel">
-          <div class="diff-group" role="radiogroup" aria-label="Niveau de difficulté">
-            <button class="diff-pill" type="button" data-diff="toddler" aria-pressed="false">Tout-petit · 3 ans</button>
-            <button class="diff-pill active" type="button" data-diff="chill" aria-pressed="true">Chill</button>
-            <button class="diff-pill" type="button" data-diff="wild" aria-pressed="false">Sauvage</button>
-          </div>
-          <p id="diff-desc" class="diff-desc">Rythme doux, prédateurs esquivables et 3 gouttelettes de vie.</p>
-
-          <div class="setting-row compact">
-            <div class="setting-header">
-              <label for="slider-bites-title" class="setting-label">Bouchées par monde</label>
-              <span id="slider-bites-title-val" class="setting-value">18</span>
-            </div>
-            <input id="slider-bites-title" class="setting-slider" type="range" min="3" max="50" value="18" step="1" />
-          </div>
-
-          <label class="toggle-row" for="toggle-cutscenes-title">
-            <span class="setting-label">Mode cinématique</span>
-            <input id="toggle-cutscenes-title" class="toggle-input" type="checkbox" checked />
-            <span class="toggle-switch" aria-hidden="true"></span>
-          </label>
+        <div class="btn-stack">
+          <button id="btn-start" class="primary-btn" type="button">Plonger</button>
+          <button id="btn-options-title" class="ghost-btn" type="button">⚙ Options</button>
         </div>
-
-        <button id="btn-start" class="primary-btn" type="button">Plonger</button>
         <p class="hint-audio">Joystick gauche pour guider · Pouvoirs à droite (ou A / E)</p>
       </div>
     </section>
 
-    <!-- Pause Overlay -->
+    <!-- Pause Overlay (Clean & Minimal) -->
     <section id="overlay-pause" class="overlay">
       <div class="overlay-card">
         <p class="eyebrow">PAUSE</p>
@@ -186,27 +165,44 @@
             <span class="stat-label">Échelle</span>
           </div>
         </div>
-        <div class="diff-group pause-diff" role="radiogroup" aria-label="Niveau de difficulté">
-          <button class="diff-pill" type="button" data-diff="toddler" aria-pressed="false">3 ans</button>
-          <button class="diff-pill active" type="button" data-diff="chill" aria-pressed="true">Chill</button>
-          <button class="diff-pill" type="button" data-diff="wild" aria-pressed="false">Sauvage</button>
-        </div>
-        <div class="setting-row">
-          <div class="setting-header">
-            <label for="slider-bites" class="setting-label">Bouchées par monde</label>
-            <span id="slider-bites-val" class="setting-value">18</span>
-          </div>
-          <input id="slider-bites" class="setting-slider" type="range" min="3" max="50" value="18" step="1" />
-        </div>
-        <label class="toggle-row pause-toggle" for="toggle-cutscenes-pause">
-          <span class="setting-label">Mode cinématique</span>
-          <input id="toggle-cutscenes-pause" class="toggle-input" type="checkbox" checked />
-          <span class="toggle-switch" aria-hidden="true"></span>
-        </label>
         <div class="btn-stack">
           <button id="btn-resume" class="primary-btn" type="button">Continuer</button>
+          <button id="btn-options-pause" class="ghost-btn" type="button">⚙ Options</button>
           <button id="btn-restart-pause" class="ghost-btn" type="button">Recommencer depuis l'atome</button>
         </div>
+      </div>
+    </section>
+
+    <!-- Dedicated Options Overlay (opened from Title or Pause) -->
+    <section id="overlay-options" class="overlay">
+      <div class="overlay-card">
+        <p class="eyebrow">PARAMÈTRES</p>
+        <h2 class="modal-title">Options</h2>
+
+        <div class="setup-panel">
+          <div class="diff-group" role="radiogroup" aria-label="Niveau de difficulté">
+            <button class="diff-pill" type="button" data-diff="toddler" aria-pressed="false">Tout-petit · 3 ans</button>
+            <button class="diff-pill active" type="button" data-diff="chill" aria-pressed="true">Chill</button>
+            <button class="diff-pill" type="button" data-diff="wild" aria-pressed="false">Sauvage</button>
+          </div>
+          <p id="diff-desc" class="diff-desc">Rythme doux, prédateurs esquivables et 3 gouttelettes de vie.</p>
+
+          <div class="setting-row compact">
+            <div class="setting-header">
+              <label for="slider-bites" class="setting-label">Bouchées par monde</label>
+              <span id="slider-bites-val" class="setting-value">18</span>
+            </div>
+            <input id="slider-bites" class="setting-slider" type="range" min="3" max="50" value="18" step="1" />
+          </div>
+
+          <label class="toggle-row" for="toggle-cutscenes">
+            <span class="setting-label">Mode cinématique</span>
+            <input id="toggle-cutscenes" class="toggle-input" type="checkbox" checked />
+            <span class="toggle-switch" aria-hidden="true"></span>
+          </label>
+        </div>
+
+        <button id="btn-options-close" class="primary-btn" type="button">Retour</button>
       </div>
     </section>
 
