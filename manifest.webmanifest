@@ -5,7 +5,7 @@
   "description": "Un voyage bioluminescent de l'infiniment petit à l'infiniment grand.",
   "start_url": "./",
   "scope": "./",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "any",
   "background_color": "#07141c",
   "theme_color": "#07141c",

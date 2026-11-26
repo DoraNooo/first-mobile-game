@@ -1286,3 +1286,13 @@ body,
     font-size: 0.66rem;
   }
 }
+
+/* Keep touch-hint neatly at the bottom center in landscape so it never overlaps Charlie */
+@media (max-height: 520px) {
+  .touch-hint {
+    bottom: calc(14px + var(--safe-bottom));
+    font-size: 0.74rem;
+    padding: 6px 14px;
+    max-width: calc(100vw - 320px);
+  }
+}

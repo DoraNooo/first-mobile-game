@@ -312,6 +312,40 @@ class GlooGame {
     }
   }
 
+  enterFullscreen() {
+    if (document.fullscreenElement || document.webkitFullscreenElement) return;
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (!req) return;
+    try {
+      const p = req.call(el, { navigationUI: 'hide' });
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+    } catch {
+      try {
+        const p2 = req.call(el);
+        if (p2 && typeof p2.catch === 'function') p2.catch(() => {});
+      } catch {
+        // Ignore if unsupported
+      }
+    }
+  }
+
+  toggleFullscreen() {
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit) {
+        try {
+          const p = exit.call(document);
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } catch {
+          // Ignore
+        }
+      }
+    } else {
+      this.enterFullscreen();
+    }
+  }
+
   setCutscenesEnabled(enabled) {
     this.cutscenesEnabled = Boolean(enabled);
     this._syncCutscenesUI();
@@ -549,15 +583,22 @@ class GlooGame {
 
     // Buttons
     document.getElementById('btn-start').addEventListener('click', () => {
+      this.enterFullscreen();
       this.audio.start();
       this.startNewJourney();
     });
+
+    const btnFullscreen = document.getElementById('btn-fullscreen');
+    if (btnFullscreen) {
+      btnFullscreen.addEventListener('click', () => this.toggleFullscreen());
+    }
 
     document.getElementById('btn-pause').addEventListener('click', () => {
       if (this.state === STATE.PLAYING) this.setPaused(true);
     });
 
     document.getElementById('btn-resume').addEventListener('click', () => {
+      this.enterFullscreen();
       if (this.state === STATE.PAUSED) this.setPaused(false);
     });
 
