@@ -2154,46 +2154,46 @@ export class CutsceneManager {
   }
 
   _drawIllustratedShot(ctx, width, height, time) {
-    // Use the handcrafted storybook illustrations with smooth Ken Burns motion on hero Intro & Finale shots
-    let spec = null;
+    // Every single cutscene shot uses our cohesive Miyazaki storybook paintings with bespoke Ken Burns motion!
     const isPortrait = height > width;
-    if (this.id === 'intro' && this.shotIndex === 0) {
-      spec = {
-        key: isPortrait ? 'portrait' : 'landscape',
-        src: isPortrait ? './assets/art/keyart-portrait.jpg' : './assets/art/keyart-landscape.jpg',
-        zoomStart: 1.04,
-        zoomEnd: 1.15,
-        panY: isPortrait ? 0.04 : 0,
-        panX: isPortrait ? 0 : -0.04,
-      };
-    } else if (this.id === 'intro' && this.shotIndex === 1) {
-      spec = {
-        key: 'charlie',
-        src: './assets/art/charlie-portrait.jpg',
-        zoomStart: 1.0,
-        zoomEnd: 1.14,
-        panY: 0,
-        panX: 0,
-      };
-    } else if (this.id === 'victory' && this.shotIndex === 1) {
-      spec = {
-        key: 'landscape',
-        src: './assets/art/keyart-landscape.jpg',
-        zoomStart: 1.05,
-        zoomEnd: 1.16,
-        panY: 0,
-        panX: 0.05,
-      };
-    } else if (this.id === 'victory' && this.shotIndex === 2) {
-      spec = {
-        key: isPortrait ? 'portrait' : 'landscape',
-        src: isPortrait ? './assets/art/keyart-portrait.jpg' : './assets/art/keyart-landscape.jpg',
-        zoomStart: 1.14,
-        zoomEnd: 1.02,
-        panY: isPortrait ? -0.04 : 0,
-        panX: 0,
-      };
-    }
+    const keyArt = isPortrait ? './assets/art/keyart-portrait.jpg' : './assets/art/keyart-landscape.jpg';
+    const keyName = isPortrait ? 'portrait' : 'landscape';
+
+    const SHOTS_ART = {
+      intro: [
+        { key: keyName, src: keyArt, zoomStart: 1.03, zoomEnd: 1.14, panX: 0, panY: isPortrait ? 0.04 : -0.02 },
+        { key: 'charlie', src: './assets/art/charlie-portrait.jpg', zoomStart: 1.0, zoomEnd: 1.15, panX: 0, panY: 0 },
+        { key: 'landscape', src: './assets/art/keyart-landscape.jpg', zoomStart: 1.18, zoomEnd: 1.05, panX: 0.08, panY: 0 },
+      ],
+      scale_1: [
+        { key: 'micro', src: './assets/art/cutscene-micro.jpg', zoomStart: 1.14, zoomEnd: 1.04, panX: 0.04, panY: 0 },
+        { key: 'micro', src: './assets/art/cutscene-micro.jpg', zoomStart: 1.04, zoomEnd: 1.14, panX: -0.05, panY: -0.02 },
+      ],
+      scale_2: [
+        { key: 'forest', src: './assets/art/cutscene-forest.jpg', zoomStart: 1.14, zoomEnd: 1.04, panX: 0.03, panY: 0.03 },
+        { key: 'forest', src: './assets/art/cutscene-forest.jpg', zoomStart: 1.04, zoomEnd: 1.14, panX: -0.05, panY: -0.03 },
+      ],
+      scale_3: [
+        { key: 'city', src: './assets/art/cutscene-city.jpg', zoomStart: 1.14, zoomEnd: 1.04, panX: 0.04, panY: 0.02 },
+        { key: 'city', src: './assets/art/cutscene-city.jpg', zoomStart: 1.04, zoomEnd: 1.14, panX: -0.05, panY: -0.02 },
+      ],
+      scale_4: [
+        { key: 'planets', src: './assets/art/cutscene-planets.jpg', zoomStart: 1.14, zoomEnd: 1.04, panX: 0, panY: 0.04 },
+        { key: 'planets', src: './assets/art/cutscene-planets.jpg', zoomStart: 1.04, zoomEnd: 1.14, panX: -0.04, panY: -0.03 },
+      ],
+      scale_5: [
+        { key: 'cosmos', src: './assets/art/cutscene-cosmos.jpg', zoomStart: 1.16, zoomEnd: 1.05, panX: 0.05, panY: 0 },
+        { key: 'cosmos', src: './assets/art/cutscene-cosmos.jpg', zoomStart: 1.05, zoomEnd: 1.14, panX: -0.04, panY: 0 },
+      ],
+      victory: [
+        { key: 'cosmos', src: './assets/art/cutscene-cosmos.jpg', zoomStart: 1.04, zoomEnd: 1.16, panX: 0, panY: 0 },
+        { key: 'landscape', src: './assets/art/keyart-landscape.jpg', zoomStart: 1.05, zoomEnd: 1.16, panX: -0.05, panY: 0 },
+        { key: keyName, src: keyArt, zoomStart: 1.14, zoomEnd: 1.02, panX: 0, panY: isPortrait ? -0.04 : 0 },
+      ],
+    };
+
+    const list = SHOTS_ART[this.id];
+    const spec = list && list[this.shotIndex];
     if (!spec) return false;
 
     const img = this._getArtImage(spec.key, spec.src);
@@ -2209,7 +2209,7 @@ export class CutsceneManager {
 
     ctx.drawImage(img, dx, dy, dw, dh);
 
-    // Overlay living bioluminescent fireflies / stardust so the illustration breathes!
+    // Overlay living bioluminescent fireflies / stardust so every painting breathes!
     for (let i = 0; i < 18; i++) {
       const fx = ((i * 0.173 + time * (0.012 + (i % 3) * 0.005)) % 1) * width;
       const fy = ((i * 0.291 - time * (0.018 + (i % 4) * 0.004) + 10) % 1) * height;

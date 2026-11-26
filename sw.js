@@ -1,4 +1,4 @@
-const CACHE_NAME = 'charlie-pwa-v10';
+const CACHE_NAME = 'charlie-pwa-v11';
 
 const CORE_ASSETS = [
   './',
@@ -8,6 +8,11 @@ const CORE_ASSETS = [
   './assets/art/keyart-landscape.jpg',
   './assets/art/keyart-portrait.jpg',
   './assets/art/charlie-portrait.jpg',
+  './assets/art/cutscene-micro.jpg',
+  './assets/art/cutscene-forest.jpg',
+  './assets/art/cutscene-city.jpg',
+  './assets/art/cutscene-planets.jpg',
+  './assets/art/cutscene-cosmos.jpg',
   './src/audio.js',
   './src/blob.js',
   './src/cutscenes.js',

@@ -845,12 +845,12 @@ export class LavaBlob {
     const isHappy = this.happyTimer > 0 && this.fear < 0.35;
     const isAlarmed = this.fear > 0.35;
 
-    // Soft rosy cheeks
-    const cheekAlpha = isHappy ? 0.36 : 0.22;
-    ctx.fillStyle = `rgba(255, 108, 146, ${cheekAlpha})`;
+    // Soft rosy storybook cheeks matching Charlie's illustrated DA
+    const cheekAlpha = isHappy ? 0.44 : 0.3;
+    ctx.fillStyle = `rgba(255, 96, 118, ${cheekAlpha})`;
     ctx.beginPath();
-    ctx.ellipse(-eyeSpacing * 1.24, size * 0.075, size * 0.105, size * 0.062, 0, 0, TWO_PI);
-    ctx.ellipse(eyeSpacing * 1.24, size * 0.075, size * 0.105, size * 0.062, 0, 0, TWO_PI);
+    ctx.ellipse(-eyeSpacing * 1.24, size * 0.08, size * 0.115, size * 0.068, 0, 0, TWO_PI);
+    ctx.ellipse(eyeSpacing * 1.24, size * 0.08, size * 0.115, size * 0.068, 0, 0, TWO_PI);
     ctx.fill();
 
     // --- EYES ---
@@ -871,7 +871,7 @@ export class LavaBlob {
         ctx.arc(ex, ey + size * 0.045, size * 0.115, Math.PI * 1.16, Math.PI * 1.84);
         ctx.stroke();
       } else {
-        const baseEyeR = size * 0.132;
+        const baseEyeR = size * 0.145;
         const eyeR = isAlarmed ? baseEyeR * (1 + (this.fear - 0.35) * 0.32) : baseEyeR;
 
         // Subtle alarmed jitter
@@ -909,14 +909,20 @@ export class LavaBlob {
           ctx.arc(px - pupilR * 0.32, py - pupilR * 0.35, pupilR * 0.34, 0, TWO_PI);
           ctx.fill();
         } else {
-          // Glossy dark-berry expressive eyes
+          // Glossy storybook dark-chocolate eyes with warm amber lower iris glow
           const pupilOffset = eyeR * 0.16;
           const px = lookCos * pupilOffset;
           const py = lookSin * pupilOffset;
 
-          ctx.fillStyle = darkBerry;
+          ctx.fillStyle = '#2a1215';
           ctx.beginPath();
-          ctx.ellipse(px * 0.35, py * 0.35, eyeR * 0.96, eyeR * 1.06, 0, 0, TWO_PI);
+          ctx.ellipse(px * 0.35, py * 0.35, eyeR * 0.98, eyeR * 1.08, 0, 0, TWO_PI);
+          ctx.fill();
+
+          // Warm amber-chestnut lower iris sheen (matches Charlie's illustrated icon!)
+          ctx.fillStyle = 'rgba(214, 118, 68, 0.48)';
+          ctx.beginPath();
+          ctx.ellipse(px * 0.35, py * 0.35 + eyeR * 0.38, eyeR * 0.56, eyeR * 0.34, 0, 0, TWO_PI);
           ctx.fill();
 
           // Primary crisp white catchlight (top-left)
