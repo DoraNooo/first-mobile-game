@@ -1,10 +1,13 @@
-const CACHE_NAME = 'charlie-pwa-v9';
+const CACHE_NAME = 'charlie-pwa-v10';
 
 const CORE_ASSETS = [
   './',
   './index.html',
   './style.css',
   './manifest.webmanifest',
+  './assets/art/keyart-landscape.jpg',
+  './assets/art/keyart-portrait.jpg',
+  './assets/art/charlie-portrait.jpg',
   './src/audio.js',
   './src/blob.js',
   './src/cutscenes.js',

@@ -2111,7 +2111,10 @@ export class CutsceneManager {
     const t = Number.isFinite(time) ? time : this.shotTime;
 
     ctx.save();
-    shot.draw(ctx, width, height, t, this.shotTime);
+    const drewArt = this._drawIllustratedShot(ctx, width, height, t);
+    if (!drewArt) {
+      shot.draw(ctx, width, height, t, this.shotTime);
+    }
 
     // Soft storybook vignette framing the animated scene
     const maxR = Math.hypot(width, height) * 0.62;
@@ -2136,5 +2139,90 @@ export class CutsceneManager {
     }
 
     ctx.restore();
+  }
+
+  _getArtImage(key, src) {
+    if (typeof Image === 'undefined') return null;
+    if (!this._artCache) this._artCache = Object.create(null);
+    if (!this._artCache[key]) {
+      const img = new Image();
+      img.src = src;
+      this._artCache[key] = img;
+    }
+    const img = this._artCache[key];
+    return img.complete && img.naturalWidth > 0 ? img : null;
+  }
+
+  _drawIllustratedShot(ctx, width, height, time) {
+    // Use the handcrafted storybook illustrations with smooth Ken Burns motion on hero Intro & Finale shots
+    let spec = null;
+    const isPortrait = height > width;
+    if (this.id === 'intro' && this.shotIndex === 0) {
+      spec = {
+        key: isPortrait ? 'portrait' : 'landscape',
+        src: isPortrait ? './assets/art/keyart-portrait.jpg' : './assets/art/keyart-landscape.jpg',
+        zoomStart: 1.04,
+        zoomEnd: 1.15,
+        panY: isPortrait ? 0.04 : 0,
+        panX: isPortrait ? 0 : -0.04,
+      };
+    } else if (this.id === 'intro' && this.shotIndex === 1) {
+      spec = {
+        key: 'charlie',
+        src: './assets/art/charlie-portrait.jpg',
+        zoomStart: 1.0,
+        zoomEnd: 1.14,
+        panY: 0,
+        panX: 0,
+      };
+    } else if (this.id === 'victory' && this.shotIndex === 1) {
+      spec = {
+        key: 'landscape',
+        src: './assets/art/keyart-landscape.jpg',
+        zoomStart: 1.05,
+        zoomEnd: 1.16,
+        panY: 0,
+        panX: 0.05,
+      };
+    } else if (this.id === 'victory' && this.shotIndex === 2) {
+      spec = {
+        key: isPortrait ? 'portrait' : 'landscape',
+        src: isPortrait ? './assets/art/keyart-portrait.jpg' : './assets/art/keyart-landscape.jpg',
+        zoomStart: 1.14,
+        zoomEnd: 1.02,
+        panY: isPortrait ? -0.04 : 0,
+        panX: 0,
+      };
+    }
+    if (!spec) return false;
+
+    const img = this._getArtImage(spec.key, spec.src);
+    if (!img) return false;
+
+    const p = clamp(this.shotTime / 7.5, 0, 1);
+    const zoom = spec.zoomStart + (spec.zoomEnd - spec.zoomStart) * p;
+    const coverScale = Math.max(width / img.naturalWidth, height / img.naturalHeight) * zoom;
+    const dw = img.naturalWidth * coverScale;
+    const dh = img.naturalHeight * coverScale;
+    const dx = (width - dw) * 0.5 + width * spec.panX * p;
+    const dy = (height - dh) * 0.5 + height * spec.panY * p;
+
+    ctx.drawImage(img, dx, dy, dw, dh);
+
+    // Overlay living bioluminescent fireflies / stardust so the illustration breathes!
+    for (let i = 0; i < 18; i++) {
+      const fx = ((i * 0.173 + time * (0.012 + (i % 3) * 0.005)) % 1) * width;
+      const fy = ((i * 0.291 - time * (0.018 + (i % 4) * 0.004) + 10) % 1) * height;
+      const twinkle = 0.25 + 0.75 * (0.5 + 0.5 * Math.sin(time * 2.6 + i * 1.7));
+      const r = 1.6 + (i % 3) * 1.1;
+      ctx.fillStyle = i % 2 === 0
+        ? `rgba(255, 232, 165, ${(0.35 + twinkle * 0.45).toFixed(3)})`
+        : `rgba(125, 240, 224, ${(0.25 + twinkle * 0.35).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.arc(fx, fy, r, 0, TWO_PI);
+      ctx.fill();
+    }
+
+    return true;
   }
 }
