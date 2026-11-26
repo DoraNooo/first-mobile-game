@@ -119,13 +119,28 @@
       <span>Utilise le joystick en bas à gauche pour guider Charlie</span>
     </div>
 
+    <!-- Animated Cutscene Cinema Overlay (Letterbox + Storybook Caption + Skip) -->
+    <div id="cutscene-ui" class="cutscene-ui hidden" aria-live="polite">
+      <div class="cinema-bar cinema-top">
+        <span id="cutscene-chapter" class="cutscene-chapter">PROLOGUE · LA FENÊTRE</span>
+        <button id="btn-cutscene-skip" class="cutscene-skip-btn" type="button">Passer ›</button>
+      </div>
+      <div class="cinema-bar cinema-bottom">
+        <p id="cutscene-text" class="cutscene-text"></p>
+        <div class="cutscene-footer">
+          <span id="cutscene-dots" class="cutscene-dots" aria-hidden="true"></span>
+          <span class="cutscene-next-hint">Touchez pour la suite ›</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Title Screen Overlay -->
     <section id="overlay-title" class="overlay visible">
       <div class="overlay-card title-card">
         <p class="eyebrow">DE L'ATOME AU COSMOS</p>
         <h1 class="game-title">CHARLIE</h1>
         <p class="tagline">
-          Guide Charlie, petite goutte de lave lumineuse, à travers six mondes vivants.
+          Guide la petite Charlie, goutte de lave lumineuse, à travers six mondes vivants.
         </p>
 
         <div class="setup-panel">
@@ -143,10 +158,16 @@
             </div>
             <input id="slider-bites-title" class="setting-slider" type="range" min="3" max="50" value="18" step="1" />
           </div>
+
+          <label class="toggle-row" for="toggle-cutscenes-title">
+            <span class="setting-label">Mode cinématique</span>
+            <input id="toggle-cutscenes-title" class="toggle-input" type="checkbox" checked />
+            <span class="toggle-switch" aria-hidden="true"></span>
+          </label>
         </div>
 
         <button id="btn-start" class="primary-btn" type="button">Plonger</button>
-        <p class="hint-audio">Doigt / souris pour guider Charlie · 2ᵉ doigt (ou A / E) pour les pouvoirs</p>
+        <p class="hint-audio">Joystick gauche pour guider · Pouvoirs à droite (ou A / E)</p>
       </div>
     </section>
 
@@ -154,7 +175,7 @@
     <section id="overlay-pause" class="overlay">
       <div class="overlay-card">
         <p class="eyebrow">PAUSE</p>
-        <h2 class="modal-title">Reprendre ton souffle</h2>
+        <h2 class="modal-title">Reprendre son souffle</h2>
         <div class="stats-row">
           <div class="stat">
             <span class="stat-value" id="pause-eaten">0</span>
@@ -177,6 +198,11 @@
           </div>
           <input id="slider-bites" class="setting-slider" type="range" min="3" max="50" value="18" step="1" />
         </div>
+        <label class="toggle-row pause-toggle" for="toggle-cutscenes-pause">
+          <span class="setting-label">Mode cinématique</span>
+          <input id="toggle-cutscenes-pause" class="toggle-input" type="checkbox" checked />
+          <span class="toggle-switch" aria-hidden="true"></span>
+        </label>
         <div class="btn-stack">
           <button id="btn-resume" class="primary-btn" type="button">Continuer</button>
           <button id="btn-restart-pause" class="ghost-btn" type="button">Recommencer depuis l'atome</button>

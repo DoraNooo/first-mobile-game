@@ -1,4 +1,4 @@
-const CACHE_NAME = 'charlie-pwa-v5';
+const CACHE_NAME = 'charlie-pwa-v6';
 
 const CORE_ASSETS = [
   './',
@@ -7,6 +7,7 @@ const CORE_ASSETS = [
   './manifest.webmanifest',
   './src/audio.js',
   './src/blob.js',
+  './src/cutscenes.js',
   './src/entities.js',
   './src/game.js',
   './src/particles.js',

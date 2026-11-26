@@ -1078,3 +1078,160 @@ body,
     line-height: 1.3;
   }
 }
+
+/* Cutscene Mode Toggle Switch (compact, zero scroll) */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+}
+
+.toggle-row.pause-toggle {
+  margin: 0 0 10px;
+}
+
+.toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #f4f7f5;
+  transition: transform 0.2s ease;
+}
+
+.toggle-input:checked + .toggle-switch {
+  background: linear-gradient(135deg, #ff9966, #ff6f61);
+}
+
+.toggle-input:checked + .toggle-switch::after {
+  transform: translateX(18px);
+}
+
+/* Cinema Cutscene Overlay (Letterbox bars + Storybook Captions) */
+.cutscene-ui {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  z-index: 18;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.cinema-bar {
+  width: 100%;
+  background: rgba(4, 10, 16, 0.92);
+  padding-left: calc(18px + var(--safe-left));
+  padding-right: calc(18px + var(--safe-right));
+}
+
+.cinema-top {
+  padding-top: calc(12px + var(--safe-top));
+  padding-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.cutscene-chapter {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-glow);
+}
+
+.cutscene-skip-btn {
+  padding: 6px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-soft);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.cutscene-skip-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.cinema-bottom {
+  padding-top: 14px;
+  padding-bottom: calc(16px + var(--safe-bottom));
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  text-align: center;
+}
+
+.cutscene-text {
+  font-family: var(--font-display);
+  font-size: clamp(0.95rem, 3.6vw, 1.15rem);
+  line-height: 1.5;
+  color: var(--text-main);
+  max-width: 560px;
+  margin: 0 auto 10px;
+}
+
+.cutscene-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.cutscene-dots {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.cutscene-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  transition: background 0.25s ease, transform 0.25s ease;
+}
+
+.cutscene-dot.active {
+  background: var(--accent-glow);
+  transform: scale(1.25);
+}
+
+.cutscene-next-hint {
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}

@@ -15,9 +15,11 @@ import { LavaBlob } from './blob.js';
 import { EcosystemManager } from './entities.js';
 import { ParticleSystem } from './particles.js';
 import { StoryManager } from './story.js';
+import { CutsceneManager } from './cutscenes.js';
 
 const STATE = {
   TITLE: 'title',
+  CUTSCENE: 'cutscene',
   PLAYING: 'playing',
   PAUSED: 'paused',
   DEFEAT: 'defeat',
@@ -28,6 +30,7 @@ const HEAL_PREY_THRESHOLD = 6;
 const HEAL_TIME_THRESHOLD = 8.0;
 const BITES_STORAGE_KEY = 'charlie_bites_per_scale';
 const DIFFICULTY_STORAGE_KEY = 'charlie_difficulty';
+const CUTSCENES_STORAGE_KEY = 'charlie_cutscenes_enabled';
 
 const DIFFICULTY_DESCRIPTIONS = {
   toddler: 'Sans danger · Idéal dès 3 ans : Charlie rebondit doucement sans jamais perdre !',
@@ -61,8 +64,16 @@ class GlooGame {
     this.sliderBitesVal = document.getElementById('slider-bites-val');
     this.sliderBitesTitle = document.getElementById('slider-bites-title');
     this.sliderBitesTitleVal = document.getElementById('slider-bites-title-val');
+    this.toggleCutscenesTitle = document.getElementById('toggle-cutscenes-title');
+    this.toggleCutscenesPause = document.getElementById('toggle-cutscenes-pause');
     this.diffPills = Array.from(document.querySelectorAll('.diff-pill[data-diff]'));
     this.diffDesc = document.getElementById('diff-desc');
+
+    this.cutsceneUI = document.getElementById('cutscene-ui');
+    this.cutsceneChapter = document.getElementById('cutscene-chapter');
+    this.cutsceneText = document.getElementById('cutscene-text');
+    this.cutsceneDots = document.getElementById('cutscene-dots');
+    this.btnCutsceneSkip = document.getElementById('btn-cutscene-skip');
 
     this.scaleBanner = document.getElementById('scale-banner');
     this.bannerEyebrow = document.getElementById('banner-eyebrow');
@@ -85,6 +96,13 @@ class GlooGame {
     this.blob = new LavaBlob(0, 0, BASE_SIZE);
     this.ecosystem = new EcosystemManager();
     this.particles = new ParticleSystem();
+    this.cutscenes = new CutsceneManager({
+      onCue: (cue) => {
+        if (cue === 'scale') this.audio.playScaleUp?.();
+        else if (cue === 'victory') this.audio.playVictory?.();
+        else this.audio.playStoryChime?.();
+      },
+    });
     this.storyMoveTimer = 0;
     this.story = new StoryManager({
       onShow: () => {
@@ -99,10 +117,12 @@ class GlooGame {
       },
     });
 
-    // Growth pacing & difficulty settings (persisted in localStorage, synced between Title & Pause)
+    // Growth pacing, difficulty & cutscene settings (persisted in localStorage, synced between Title & Pause)
     this.bitesPerScale = this._loadBitesPerScale();
     this.difficulty = this._loadDifficulty();
+    this.cutscenesEnabled = this._loadCutscenesEnabled();
     this._syncBitesUI();
+    this._syncCutscenesUI();
 
     // Viewport, Mobile Detection & Adaptive Performance Scaler
     this.width = window.innerWidth;
@@ -265,6 +285,72 @@ class GlooGame {
       this.sliderBitesTitle.value = str;
       this.sliderBitesTitleVal.textContent = str;
     }
+  }
+
+  _loadCutscenesEnabled() {
+    try {
+      const saved = localStorage.getItem(CUTSCENES_STORAGE_KEY);
+      if (saved === 'false') return false;
+    } catch {
+      // Ignore storage errors
+    }
+    return true;
+  }
+
+  _syncCutscenesUI() {
+    if (this.toggleCutscenesTitle) this.toggleCutscenesTitle.checked = this.cutscenesEnabled;
+    if (this.toggleCutscenesPause) this.toggleCutscenesPause.checked = this.cutscenesEnabled;
+  }
+
+  setCutscenesEnabled(enabled) {
+    this.cutscenesEnabled = Boolean(enabled);
+    this._syncCutscenesUI();
+    try {
+      localStorage.setItem(CUTSCENES_STORAGE_KEY, this.cutscenesEnabled ? 'true' : 'false');
+    } catch {
+      // Ignore storage errors
+    }
+  }
+
+  _syncCutsceneCaption() {
+    const shot = this.cutscenes.getCurrentShot();
+    if (!shot) return;
+    if (this.cutsceneChapter) this.cutsceneChapter.textContent = shot.chapter;
+    if (this.cutsceneText) this.cutsceneText.textContent = shot.text;
+    if (this.cutsceneDots) {
+      let html = '';
+      for (let i = 0; i < shot.totalShots; i++) {
+        html += `<span class="cutscene-dot${i === shot.shotNumber - 1 ? ' active' : ''}"></span>`;
+      }
+      this.cutsceneDots.innerHTML = html;
+    }
+  }
+
+  playCutscene(cutsceneId, onComplete) {
+    if (!this.cutscenesEnabled) {
+      onComplete?.();
+      return;
+    }
+    this.hideAllOverlays();
+    this.story.hideImmediate();
+    this.hud.classList.add('hidden');
+    this.powersBar.classList.add('hidden');
+    if (this.joystickZone) this.joystickZone.classList.add('hidden');
+    this.touchHint.classList.add('hidden');
+    this.dangerVignette.classList.remove('active');
+    this.resetJoystick();
+    this.pointer.active = false;
+    this.pointer.movePointerId = null;
+
+    this.state = STATE.CUTSCENE;
+    if (this.cutsceneUI) this.cutsceneUI.classList.remove('hidden');
+
+    this.cutscenes.play(cutsceneId, () => {
+      if (this.cutsceneUI) this.cutsceneUI.classList.add('hidden');
+      this.lastFrameTime = performance.now();
+      onComplete?.();
+    });
+    this._syncCutsceneCaption();
   }
 
   setDifficulty(mode, persist = true) {
@@ -495,9 +581,45 @@ class GlooGame {
       this.iconSoundOff.classList.toggle('hidden', !muted);
     });
 
-    // Keyboard shortcuts (Pause, Mute, and Desktop Powers: A = Crachat de Lave, E = Onde & Élan)
+    // Cutscene mode toggles (Title + Pause)
+    const onCutscenesChange = (e) => this.setCutscenesEnabled(e.target.checked);
+    if (this.toggleCutscenesTitle) this.toggleCutscenesTitle.addEventListener('change', onCutscenesChange);
+    if (this.toggleCutscenesPause) this.toggleCutscenesPause.addEventListener('change', onCutscenesChange);
+
+    // Cutscene advance on tap/click + skip button
+    if (this.cutsceneUI) {
+      this.cutsceneUI.addEventListener('pointerdown', (e) => {
+        if (this.state !== STATE.CUTSCENE) return;
+        if (e.target === this.btnCutsceneSkip) return;
+        e.preventDefault();
+        if (this.cutscenes.advance()) {
+          this._syncCutsceneCaption();
+        }
+      });
+    }
+    if (this.btnCutsceneSkip) {
+      this.btnCutsceneSkip.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (this.state === STATE.CUTSCENE) {
+          this.cutscenes.skip();
+        }
+      });
+    }
+
+    // Keyboard shortcuts (Pause, Mute, Cutscene advance, and Desktop Powers: A = Crachat de Lave, E = Onde & Élan)
     window.addEventListener('keydown', (e) => {
       const k = e.key ? e.key.toLowerCase() : '';
+      if (this.state === STATE.CUTSCENE) {
+        if (e.code === 'Space' || e.code === 'Enter') {
+          e.preventDefault();
+          if (this.cutscenes.advance()) this._syncCutsceneCaption();
+        } else if (e.code === 'Escape') {
+          e.preventDefault();
+          this.cutscenes.skip();
+        }
+        return;
+      }
       if (e.code === 'Escape' || e.code === 'Space') {
         if (this.transition.active && (this.transition.phase === 'in' || this.transition.phase === 'hold')) {
           if (this.transition.guard <= 0) {
@@ -611,17 +733,26 @@ class GlooGame {
    * then parts smoothly over ~0.95s).
    */
   startScaleTransition(fromScale, toScale) {
-    this.transition.active = true;
-    this.transition.phase = 'in';
-    this.transition.timer = 0;
-    this.transition.guard = 0.45;
-    this.transition.alpha = 0;
-    this.transition.fromScale = fromScale;
-    this.transition.toScale = toScale;
-    this.transition.swapped = false;
-
     this.ecosystem.dissolveOldScale(toScale);
-    this.story.trigger(`scale_${toScale}`, { priority: true });
+    this.ecosystem.seedScale(this.blob, toScale);
+    this.projectiles.length = 0;
+
+    if (this.cutscenesEnabled) {
+      this.playCutscene(`scale_${toScale}`, () => {
+        this.hud.classList.remove('hidden');
+        this.powersBar.classList.remove('hidden');
+        if (this.joystickZone) this.joystickZone.classList.remove('hidden');
+        this.state = STATE.PLAYING;
+        this.blob.invulnTimer = Math.max(this.blob.invulnTimer, 1.4);
+        this.camera.zoom = this.getTargetPlayerScreenRadius() / this.blob.size;
+        this.updateDangerState();
+      });
+      return;
+    }
+
+    // Cinématiques OFF: seamless transition with brief grace period
+    this.blob.invulnTimer = Math.max(this.blob.invulnTimer, 1.2);
+    this.showScaleBanner(toScale);
   }
 
   dismissScaleTransition() {
@@ -750,17 +881,30 @@ class GlooGame {
     this.hintMovedTime = 0;
     this.hintDismissed = false;
 
-    this.touchHint.classList.remove('hidden', 'fade-out');
-
-    this.state = STATE.PLAYING;
     this.audio.setScale(0);
     this.audio.setPaused(false);
-    this.showScaleBanner(0);
     this.updateHUD(0);
     this.updateDangerState();
     this.updatePowerLevelUI(1, false);
     this.updatePowerCooldownUI();
-    this.story.trigger('start');
+
+    const beginPlay = () => {
+      this.hud.classList.remove('hidden');
+      this.powersBar.classList.remove('hidden');
+      if (this.joystickZone) this.joystickZone.classList.remove('hidden');
+      this.touchHint.classList.remove('hidden', 'fade-out');
+      this.state = STATE.PLAYING;
+      this.showScaleBanner(0);
+      if (!this.cutscenesEnabled) {
+        this.story.trigger('start');
+      }
+    };
+
+    if (this.cutscenesEnabled) {
+      this.playCutscene('intro', beginPlay);
+    } else {
+      beginPlay();
+    }
   }
 
   continueAtCurrentScale() {
@@ -878,18 +1022,28 @@ class GlooGame {
 
   triggerVictory() {
     this.victoryShown = true;
-    this.state = STATE.VICTORY;
     this.pointer.active = false;
     this.pointer.movePointerId = null;
+    this.resetJoystick();
     this.dangerVignette.classList.remove('active');
     this.blob.lowHealth = false;
     this.transition.active = false;
     this.transition.alpha = 0;
     this.story.hideImmediate();
-    this.audio.playVictory();
     document.getElementById('victory-eaten').textContent = String(this.eatenCount);
     document.getElementById('victory-time').textContent = this.formatDuration(this.playTime);
-    this.overlayVictory.classList.add('visible');
+
+    const showVictoryCard = () => {
+      this.state = STATE.VICTORY;
+      this.audio.playVictory();
+      this.overlayVictory.classList.add('visible');
+    };
+
+    if (this.cutscenesEnabled) {
+      this.playCutscene('victory', showVictoryCard);
+    } else {
+      showVictoryCard();
+    }
   }
 
   screenToWorld(sx, sy) {
@@ -1193,6 +1347,11 @@ class GlooGame {
 
   update(dt) {
     this.time += dt;
+
+    if (this.state === STATE.CUTSCENE) {
+      this.cutscenes.update(dt);
+      return;
+    }
 
     // Gentle title screen ambient drift
     if (this.state === STATE.TITLE) {
@@ -1739,6 +1898,12 @@ class GlooGame {
 
   render() {
     const ctx = this.ctx;
+
+    if (this.state === STATE.CUTSCENE) {
+      this.cutscenes.draw(ctx, this.width, this.height, this.time);
+      return;
+    }
+
     const progress = sizeToProgress(this.blob.size);
     const palette = getBlendedPalette(progress);
 
