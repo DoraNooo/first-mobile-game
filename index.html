@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#07141c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="CHARLIE — Un jeu mobile bioluminescent et fluide où Charlie grandit de l'infiniment petit jusqu'à l'infiniment grand." />
+  <title>CHARLIE — De l'atome au cosmos</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main id="app">
+    <canvas id="game-canvas" aria-label="Espace de jeu CHARLIE"></canvas>
+
+    <!-- Critical Low-Health Crimson Vignette -->
+    <div id="danger-vignette" class="danger-vignette" aria-hidden="true"></div>
+
+    <!-- Minimal In-Game HUD -->
+    <header id="hud" class="hud hidden" aria-live="polite">
+      <div class="hud-left">
+        <div class="scale-meta">
+          <span id="hud-scale-name" class="scale-name">Quantique</span>
+          <span class="scale-sep">·</span>
+          <span id="hud-size-label" class="size-label">0.1 nm</span>
+        </div>
+        <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div id="hud-progress-fill" class="progress-fill"></div>
+          <div class="progress-ticks">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud-right">
+        <button id="btn-audio" class="icon-btn" type="button" aria-label="Activer ou couper le son" title="Son">
+          <svg id="icon-sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+          </svg>
+          <svg id="icon-sound-off" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+          </svg>
+        </button>
+        <button id="btn-pause" class="icon-btn" type="button" aria-label="Mettre en pause" title="Pause">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+            <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Poetic Scale Transition Banner -->
+    <div id="scale-banner" class="scale-banner" aria-live="polite">
+      <p id="banner-eyebrow" class="banner-eyebrow">ÉCHELLE II</p>
+      <h2 id="banner-title" class="banner-title">La Goutte d'Eau</h2>
+      <p id="banner-sub" class="banner-sub">10⁻⁶ m · Monde Microscopique</p>
+    </div>
+
+    <!-- Floating Poetic Story Card (Non-Intrusive, Tap to Continue) -->
+    <aside id="story-box" class="story-box" aria-live="polite" role="status" title="Touchez pour continuer">
+      <div class="story-emblem" aria-hidden="true">
+        <span class="emblem-eye"></span>
+        <span class="emblem-eye"></span>
+      </div>
+      <div class="story-content">
+        <p id="story-chapter" class="story-chapter">PROLOGUE · CHARLIE</p>
+        <p id="story-text" class="story-text"></p>
+        <p class="story-tap-hint">Touchez pour continuer</p>
+      </div>
+    </aside>
+
+    <!-- Multi-Touch Evolving Powers Bar (Bottom-Right) -->
+    <div id="powers-bar" class="powers-bar hidden" aria-label="Pouvoirs évolutifs">
+      <button id="btn-power-spit" class="power-btn power-spit" type="button" aria-label="Crachat de Lave (Touche A)" title="Crachat de Lave (A)">
+        <span class="power-cd-overlay" aria-hidden="true"></span>
+        <svg class="power-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 2.8c2.6 3.5 6 6.8 6 11.1a6 6 0 1 1-12 0c0-2.4 1.2-4.6 2.6-6.5.2 1.8 1.2 2.8 2.2 2.8-.6-2.4.1-5.1 1.2-7.4Z" fill="currentColor" fill-opacity="0.22"></path>
+          <circle cx="12" cy="14.8" r="2.2" fill="currentColor" stroke="none"></circle>
+        </svg>
+        <span id="badge-power-spit" class="power-lvl">Nv.1</span>
+        <span class="power-key" aria-hidden="true">A</span>
+      </button>
+
+      <button id="btn-power-dash" class="power-btn power-dash" type="button" aria-label="Onde et Élan (Touche E)" title="Onde & Élan (E)">
+        <span class="power-cd-overlay" aria-hidden="true"></span>
+        <svg class="power-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 12h11"></path>
+          <path d="M11 7l5 5-5 5"></path>
+          <path d="M18.2 6.8a7.8 7.8 0 0 1 0 10.4" opacity="0.85"></path>
+          <path d="M20.6 4.4a11 11 0 0 1 0 15.2" opacity="0.48"></path>
+        </svg>
+        <span id="badge-power-dash" class="power-lvl">Nv.1</span>
+        <span class="power-key" aria-hidden="true">E</span>
+      </button>
+    </div>
+
+    <!-- Subtle Touch Hint (fades out after first movement) -->
+    <div id="touch-hint" class="touch-hint hidden">
+      <span>Glisse ton doigt pour guider Charlie et croquer plus petit</span>
+    </div>
+
+    <!-- Title Screen Overlay -->
+    <section id="overlay-title" class="overlay visible">
+      <div class="overlay-card title-card">
+        <p class="eyebrow">DE L'ATOME AU COSMOS</p>
+        <h1 class="game-title">CHARLIE</h1>
+        <p class="tagline">
+          Guide Charlie, petite goutte de lave lumineuse, à travers six mondes vivants.
+        </p>
+
+        <div class="setup-panel">
+          <div class="diff-group" role="radiogroup" aria-label="Niveau de difficulté">
+            <button class="diff-pill" type="button" data-diff="toddler" aria-pressed="false">Tout-petit · 3 ans</button>
+            <button class="diff-pill active" type="button" data-diff="chill" aria-pressed="true">Chill</button>
+            <button class="diff-pill" type="button" data-diff="wild" aria-pressed="false">Sauvage</button>
+          </div>
+          <p id="diff-desc" class="diff-desc">Rythme doux, prédateurs esquivables et 3 gouttelettes de vie.</p>
+
+          <div class="setting-row compact">
+            <div class="setting-header">
+              <label for="slider-bites-title" class="setting-label">Bouchées par monde</label>
+              <span id="slider-bites-title-val" class="setting-value">18</span>
+            </div>
+            <input id="slider-bites-title" class="setting-slider" type="range" min="3" max="50" value="18" step="1" />
+          </div>
+        </div>
+
+        <button id="btn-start" class="primary-btn" type="button">Plonger</button>
+        <p class="hint-audio">Doigt / souris pour guider Charlie · 2ᵉ doigt (ou A / E) pour les pouvoirs</p>
+      </div>
+    </section>
+
+    <!-- Pause Overlay -->
+    <section id="overlay-pause" class="overlay">
+      <div class="overlay-card">
+        <p class="eyebrow">PAUSE</p>
+        <h2 class="modal-title">Reprendre ton souffle</h2>
+        <div class="stats-row">
+          <div class="stat">
+            <span class="stat-value" id="pause-eaten">0</span>
+            <span class="stat-label">Croqués</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="pause-scale">Quantique</span>
+            <span class="stat-label">Échelle</span>
+          </div>
+        </div>
+        <div class="diff-group pause-diff" role="radiogroup" aria-label="Niveau de difficulté">
+          <button class="diff-pill" type="button" data-diff="toddler" aria-pressed="false">3 ans</button>
+          <button class="diff-pill active" type="button" data-diff="chill" aria-pressed="true">Chill</button>
+          <button class="diff-pill" type="button" data-diff="wild" aria-pressed="false">Sauvage</button>
+        </div>
+        <div class="setting-row">
+          <div class="setting-header">
+            <label for="slider-bites" class="setting-label">Bouchées par monde</label>
+            <span id="slider-bites-val" class="setting-value">18</span>
+          </div>
+          <input id="slider-bites" class="setting-slider" type="range" min="3" max="50" value="18" step="1" />
+        </div>
+        <div class="btn-stack">
+          <button id="btn-resume" class="primary-btn" type="button">Continuer</button>
+          <button id="btn-restart-pause" class="ghost-btn" type="button">Recommencer depuis l'atome</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Swallowed / Gentle Defeat Overlay -->
+    <section id="overlay-defeat" class="overlay">
+      <div class="overlay-card">
+        <p class="eyebrow">LA LOI DU PLUS GRAND</p>
+        <h2 class="modal-title">Charlie s'est dispersé !</h2>
+        <p class="modal-copy">Même les plus petites flammes se reforment. Repars d'ici ou reprends le voyage depuis l'atome.</p>
+        <div class="btn-stack">
+          <button id="btn-continue-scale" class="primary-btn" type="button">Continuer à cette échelle</button>
+          <button id="btn-restart-defeat" class="ghost-btn" type="button">Recommencer depuis l'atome</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cosmic Finale Overlay -->
+    <section id="overlay-victory" class="overlay">
+      <div class="overlay-card victory-card">
+        <p class="eyebrow">INFINIMENT GRAND</p>
+        <h2 class="modal-title">Charlie ne fait plus qu'un avec le cosmos</h2>
+        <p class="modal-copy">
+          D'un simple quark jusqu'aux galaxies spirales, Charlie a grandi à son rythme à travers tout l'univers.
+        </p>
+        <div class="stats-row">
+          <div class="stat">
+            <span class="stat-value" id="victory-eaten">0</span>
+            <span class="stat-label">Éléments avalés</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="victory-time">0:00</span>
+            <span class="stat-label">Voyage</span>
+          </div>
+        </div>
+        <div class="btn-stack">
+          <button id="btn-freeroam" class="primary-btn" type="button">Continuer à flotter</button>
+          <button id="btn-restart-victory" class="ghost-btn" type="button">Revivre le voyage</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="./src/game.js"></script>
+</body>
+</html>
