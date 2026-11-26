@@ -85,9 +85,14 @@ class GlooGame {
     this.blob = new LavaBlob(0, 0, BASE_SIZE);
     this.ecosystem = new EcosystemManager();
     this.particles = new ParticleSystem();
+    this.storyMoveTimer = 0;
     this.story = new StoryManager({
-      onShow: () => this.audio.playStoryChime?.(),
+      onShow: () => {
+        this.storyMoveTimer = 0;
+        this.audio.playStoryChime?.();
+      },
       onDismiss: (key) => {
+        this.storyMoveTimer = 0;
         if (this.transition.active && key === `scale_${this.transition.toScale}`) {
           this.dismissScaleTransition();
         }
@@ -1308,6 +1313,23 @@ class GlooGame {
       nearestPredator,
       this.camera.zoom
     );
+
+    // Dismiss floating story card automatically after ~2.2s of active movement (stays open while still!)
+    if (this.story.active && !this.transition.active) {
+      const blobSpeed = Math.hypot(this.blob.vx, this.blob.vy);
+      const isMoving = hasSteerTarget && blobSpeed > this.blob.size * 1.2;
+      if (isMoving) {
+        this.storyMoveTimer += dt;
+        if (this.storyMoveTimer >= 2.2) {
+          this.storyMoveTimer = 0;
+          this.story.dismiss(true);
+        }
+      } else {
+        this.storyMoveTimer = Math.max(0, this.storyMoveTimer - dt * 1.5);
+      }
+    } else {
+      this.storyMoveTimer = 0;
+    }
 
     // Update lava spit projectiles
     this.updateProjectiles(dt);
