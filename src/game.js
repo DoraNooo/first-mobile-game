@@ -333,6 +333,8 @@ class GlooGame {
     }
     this.hideAllOverlays();
     this.story.hideImmediate();
+    this.scaleBanner.classList.remove('show');
+    this.bannerTimer = 0;
     this.hud.classList.add('hidden');
     this.powersBar.classList.add('hidden');
     if (this.joystickZone) this.joystickZone.classList.add('hidden');

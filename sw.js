@@ -1,4 +1,4 @@
-const CACHE_NAME = 'charlie-pwa-v6';
+const CACHE_NAME = 'charlie-pwa-v7';
 
 const CORE_ASSETS = [
   './',

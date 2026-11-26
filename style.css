@@ -1235,3 +1235,54 @@ body,
   text-transform: uppercase;
   color: var(--text-muted);
 }
+
+/* Full-bleed gradient cinema bars — never crop cutscenes in mobile portrait or landscape */
+.cinema-bar {
+  background: transparent;
+}
+
+.cinema-top {
+  background: linear-gradient(180deg, rgba(4, 10, 16, 0.82) 0%, rgba(4, 10, 16, 0.35) 68%, rgba(4, 10, 16, 0) 100%);
+  border-bottom: none;
+  padding-top: calc(10px + var(--safe-top));
+  padding-bottom: 18px;
+}
+
+.cinema-bottom {
+  background: linear-gradient(0deg, rgba(4, 10, 16, 0.9) 0%, rgba(4, 10, 16, 0.65) 72%, rgba(4, 10, 16, 0) 100%);
+  border-top: none;
+  padding-top: 22px;
+  padding-bottom: calc(12px + var(--safe-bottom));
+}
+
+@media (max-height: 520px) {
+  .cinema-top {
+    padding-top: calc(6px + var(--safe-top));
+    padding-bottom: 10px;
+  }
+
+  .cutscene-chapter {
+    font-size: 0.66rem;
+  }
+
+  .cutscene-skip-btn {
+    padding: 4px 10px;
+    font-size: 0.72rem;
+  }
+
+  .cinema-bottom {
+    padding-top: 14px;
+    padding-bottom: calc(8px + var(--safe-bottom));
+  }
+
+  .cutscene-text {
+    font-size: 0.84rem;
+    line-height: 1.32;
+    margin-bottom: 5px;
+    max-width: 640px;
+  }
+
+  .cutscene-next-hint {
+    font-size: 0.66rem;
+  }
+}
