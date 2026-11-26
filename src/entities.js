@@ -652,7 +652,10 @@ function isDirectionalSpecies(kind) {
     case 'ladybug':
     case 'moth':
     case 'frog':
+    case 'owl':
     case 'car':
+    case 'helicopter':
+    case 'blimp':
     case 'comet':
       return true;
     default:
@@ -673,8 +676,16 @@ function _getSpeciesSprites(kind, col, acc) {
   let entry = _spriteCache.get(key);
   if (entry) return entry;
 
-  // Give long-tailed/wide species extra canvas margin so tails & rings never clip
-  const wide = kind === 'comet' || kind === 'photon' || kind === 'bacteria' || kind === 'ringed' || kind === 'car';
+  // Give long-tailed/wide species extra canvas margin so tails, rotors & wings never clip
+  const wide =
+    kind === 'comet' ||
+    kind === 'photon' ||
+    kind === 'bacteria' ||
+    kind === 'ringed' ||
+    kind === 'car' ||
+    kind === 'owl' ||
+    kind === 'helicopter' ||
+    kind === 'blimp';
   const dim = wide ? 160 : 128;
   const spriteR = wide ? 30 : 34;
   const half = dim * 0.5;

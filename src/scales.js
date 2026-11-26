@@ -93,11 +93,11 @@ export const SCALES = [
     blobGlow: [255, 152, 118],
     musicRoot: 196.0, // G3
     species: [
-      { kind: 'lantern', name: 'Lanterne', relSize: 0.38, speed: 0.65, color: '#fdba74', accent: '#ffedd5', behavior: 'drift' },
-      { kind: 'car', name: 'Voiture', relSize: 0.6, speed: 1.35, color: '#93c5fd', accent: '#fef08a', behavior: 'glide' },
-      { kind: 'tree', name: 'Arbre', relSize: 0.88, speed: 0.35, color: '#34d399', accent: '#a7f3d0', behavior: 'drift' },
-      { kind: 'house', name: 'Maison', relSize: 1.22, speed: 0.3, color: '#fbbf24', accent: '#fef3c7', behavior: 'drift' },
-      { kind: 'tower', name: 'Gratte-ciel', relSize: 1.75, speed: 0.45, color: '#f87171', accent: '#fee2e2', behavior: 'predator' },
+      { kind: 'lantern', name: 'Lanterne céleste', relSize: 0.38, speed: 0.65, color: '#fdba74', accent: '#ffedd5', behavior: 'drift' },
+      { kind: 'owl', name: 'Chouette nocturne', relSize: 0.6, speed: 1.15, color: '#c08457', accent: '#fef08a', behavior: 'glide' },
+      { kind: 'car', name: 'Voiture', relSize: 0.88, speed: 1.3, color: '#60a5fa', accent: '#fef08a', behavior: 'glide' },
+      { kind: 'helicopter', name: 'Hélicoptère', relSize: 1.24, speed: 1.05, color: '#38bdf8', accent: '#fef3c7', behavior: 'roam' },
+      { kind: 'blimp', name: 'Dirigeable', relSize: 1.75, speed: 0.72, color: '#f87171', accent: '#fde68a', behavior: 'predator' },
     ],
   },
   {

@@ -1741,6 +1741,926 @@ function drawTower(ctx, r, ph, time) {
   ctx.restore();
 }
 
+function drawOwl(ctx, r, ph, time, color, accent) {
+  const flap = Math.sin(time * 4.6 + ph);
+  const wingSpan = 0.85 + 0.15 * flap;
+  const wingSweep = flap * 0.13;
+  const baseChestnut = color || '#c08457';
+  const eyeAmber = accent || '#fbbf24';
+
+  // Soft warm golden-amber nocturnal aura
+  drawRadialGlow(
+    ctx,
+    0.06 * r,
+    0,
+    r * 0.12,
+    r * 1.36,
+    'rgba(254, 240, 138, 0.22)',
+    'rgba(245, 158, 11, 0)'
+  );
+
+  // --- Fanned Tail Feathers at -X ---
+  ctx.save();
+  const tailAngles = [-0.42, -0.21, 0, 0.21, 0.42];
+  for (let i = 0; i < tailAngles.length; i++) {
+    ctx.save();
+    ctx.translate(-0.42 * r, 0);
+    ctx.rotate(tailAngles[i]);
+
+    const tLen = (i === 2 ? 0.62 : i === 1 || i === 3 ? 0.56 : 0.48) * r;
+    const tGrad = ctx.createLinearGradient(0, 0, -tLen, 0);
+    tGrad.addColorStop(0, baseChestnut);
+    tGrad.addColorStop(0.58, '#854d0e');
+    tGrad.addColorStop(1, '#451a03');
+
+    ctx.fillStyle = tGrad;
+    ctx.beginPath();
+    ctx.ellipse(-tLen * 0.52, 0, tLen * 0.52, r * 0.115, 0, 0, TWO_PI);
+    ctx.fill();
+
+    // Soft cream barred tail band near tip
+    ctx.strokeStyle = 'rgba(254, 243, 199, 0.52)';
+    ctx.lineWidth = r * 0.036;
+    ctx.beginPath();
+    ctx.moveTo(-tLen * 0.74, -r * 0.075);
+    ctx.lineTo(-tLen * 0.74, r * 0.075);
+    ctx.stroke();
+
+    // Subtle dark feather shaft
+    ctx.strokeStyle = 'rgba(69, 26, 3, 0.45)';
+    ctx.lineWidth = r * 0.016;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.04, 0);
+    ctx.lineTo(-tLen * 0.92, 0);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // --- Gracefully Flapping Scalloped Feathered Wings ---
+  for (let side = -1; side <= 1; side += 2) {
+    ctx.save();
+    ctx.translate(0.06 * r, side * 0.16 * r);
+    ctx.scale(1, wingSpan);
+    ctx.rotate(side * (-0.05 + wingSweep));
+
+    // Primary feathered wing silhouette with scalloped trailing tips
+    const wGrad = ctx.createRadialGradient(
+      0.06 * r,
+      side * 0.24 * r,
+      r * 0.06,
+      -0.08 * r,
+      side * 0.56 * r,
+      r * 1.12
+    );
+    wGrad.addColorStop(0, '#e6b88a');
+    wGrad.addColorStop(0.32, baseChestnut);
+    wGrad.addColorStop(0.72, '#8b4513');
+    wGrad.addColorStop(1, '#451a03');
+
+    ctx.beginPath();
+    ctx.moveTo(0.24 * r, 0);
+    // Curved leading wing edge
+    ctx.bezierCurveTo(0.42 * r, side * 0.36 * r, 0.30 * r, side * 0.96 * r, -0.04 * r, side * 1.16 * r);
+    // Scalloped primary feather tips along trailing edge
+    ctx.quadraticCurveTo(-0.16 * r, side * 1.14 * r, -0.18 * r, side * 1.00 * r);
+    ctx.quadraticCurveTo(-0.30 * r, side * 1.02 * r, -0.32 * r, side * 0.84 * r);
+    ctx.quadraticCurveTo(-0.44 * r, side * 0.82 * r, -0.44 * r, side * 0.64 * r);
+    ctx.quadraticCurveTo(-0.52 * r, side * 0.58 * r, -0.48 * r, side * 0.40 * r);
+    ctx.quadraticCurveTo(-0.46 * r, side * 0.18 * r, -0.26 * r, side * 0.04 * r);
+    ctx.closePath();
+
+    ctx.fillStyle = wGrad;
+    ctx.fill();
+
+    // Clipped scalloped cream feather bars & dark primary vane lines
+    ctx.save();
+    ctx.clip();
+
+    // Soft cream-buff covert spots & barred flight-feather pattern
+    ctx.fillStyle = 'rgba(254, 243, 199, 0.34)';
+    for (let f = 0; f < 4; f++) {
+      const fx = (-0.06 - f * 0.10) * r;
+      const fy = side * (0.86 - f * 0.16) * r;
+      ctx.beginPath();
+      ctx.ellipse(fx, fy, r * 0.075, r * 0.042, side * -0.45, 0, TWO_PI);
+      ctx.fill();
+    }
+
+    // Subtle dark feather rachis lines
+    ctx.strokeStyle = 'rgba(69, 26, 3, 0.36)';
+    ctx.lineWidth = r * 0.02;
+    ctx.beginPath();
+    ctx.moveTo(0.12 * r, side * 0.18 * r);
+    ctx.lineTo(-0.06 * r, side * 1.08 * r);
+    ctx.moveTo(0.02 * r, side * 0.18 * r);
+    ctx.lineTo(-0.22 * r, side * 0.92 * r);
+    ctx.moveTo(-0.08 * r, side * 0.16 * r);
+    ctx.lineTo(-0.36 * r, side * 0.72 * r);
+    ctx.moveTo(-0.16 * r, side * 0.12 * r);
+    ctx.lineTo(-0.44 * r, side * 0.48 * r);
+    ctx.stroke();
+
+    // Overlapping warm cream-chestnut upper covert feather band
+    const covGrad = ctx.createLinearGradient(0.24 * r, 0, -0.18 * r, side * 0.56 * r);
+    covGrad.addColorStop(0, '#fef3c7');
+    covGrad.addColorStop(0.45, '#d69e6c');
+    covGrad.addColorStop(1, '#92400e');
+    ctx.fillStyle = covGrad;
+    ctx.beginPath();
+    ctx.moveTo(0.26 * r, 0);
+    ctx.quadraticCurveTo(0.32 * r, side * 0.42 * r, 0.06 * r, side * 0.68 * r);
+    ctx.quadraticCurveTo(-0.06 * r, side * 0.62 * r, -0.06 * r, side * 0.48 * r);
+    ctx.quadraticCurveTo(-0.18 * r, side * 0.44 * r, -0.16 * r, side * 0.28 * r);
+    ctx.quadraticCurveTo(-0.26 * r, side * 0.22 * r, -0.20 * r, side * 0.04 * r);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+
+    // Rich umber wing edge outline
+    ctx.strokeStyle = 'rgba(69, 26, 3, 0.55)';
+    ctx.lineWidth = r * 0.024;
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // --- Plump Warm Chestnut-and-Cream Feathered Body ---
+  const bodyX = -0.06 * r;
+  const bodyRx = 0.58 * r;
+  const bodyRy = 0.42 * r;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(bodyX, 0, bodyRx, bodyRy, 0, 0, TWO_PI);
+  const bGrad = ctx.createRadialGradient(
+    bodyX + 0.12 * r,
+    -0.14 * r,
+    r * 0.05,
+    bodyX,
+    0,
+    bodyRx * 1.15
+  );
+  bGrad.addColorStop(0, '#f7dcc0');
+  bGrad.addColorStop(0.32, baseChestnut);
+  bGrad.addColorStop(0.75, '#8b4513');
+  bGrad.addColorStop(1, '#451a03');
+  ctx.fillStyle = bGrad;
+  ctx.fill();
+
+  // Clipped scalloped cream plumage chevrons along back
+  ctx.clip();
+  ctx.strokeStyle = 'rgba(255, 251, 235, 0.44)';
+  ctx.lineWidth = r * 0.032;
+  ctx.lineCap = 'round';
+  for (let row = 0; row < 3; row++) {
+    const rx = (0.10 - row * 0.20) * r;
+    const count = row === 2 ? 2 : 3;
+    for (let c = 0; c < count; c++) {
+      const cy = (c - (count - 1) * 0.5) * 0.22 * r;
+      ctx.beginPath();
+      ctx.arc(rx + 0.06 * r, cy, r * 0.095, Math.PI * 0.65, Math.PI * 1.35);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // Soft back specular highlight
+  drawGlossOval(ctx, 0.02 * r, -0.15 * r, r * 0.22, r * 0.09, -0.15, 0.24);
+
+  // --- Subtle Feathered Ear Tufts ---
+  for (let side = -1; side <= 1; side += 2) {
+    ctx.fillStyle = '#6b2f0e';
+    ctx.beginPath();
+    ctx.moveTo(0.46 * r, side * 0.22 * r);
+    ctx.quadraticCurveTo(0.28 * r, side * 0.46 * r, 0.14 * r, side * 0.43 * r);
+    ctx.quadraticCurveTo(0.24 * r, side * 0.28 * r, 0.34 * r, side * 0.16 * r);
+    ctx.closePath();
+    ctx.fill();
+
+    // Warm cream inner ear-tuft highlight
+    ctx.fillStyle = 'rgba(254, 243, 199, 0.55)';
+    ctx.beginPath();
+    ctx.moveTo(0.42 * r, side * 0.24 * r);
+    ctx.quadraticCurveTo(0.30 * r, side * 0.38 * r, 0.20 * r, side * 0.38 * r);
+    ctx.quadraticCurveTo(0.28 * r, side * 0.29 * r, 0.36 * r, side * 0.20 * r);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // --- Cute Rounded Head at +X ---
+  const headX = 0.44 * r;
+  const hGrad = ctx.createRadialGradient(
+    headX + 0.05 * r,
+    -0.10 * r,
+    r * 0.04,
+    headX,
+    0,
+    r * 0.40
+  );
+  hGrad.addColorStop(0, '#f3d1ad');
+  hGrad.addColorStop(0.40, baseChestnut);
+  hGrad.addColorStop(0.84, '#7c2d12');
+  hGrad.addColorStop(1, '#451a03');
+  ctx.fillStyle = hGrad;
+  ctx.beginPath();
+  ctx.ellipse(headX, 0, r * 0.34, r * 0.37, 0, 0, TWO_PI);
+  ctx.fill();
+
+  // Soft cream heart-shaped facial disc framing the eyes
+  for (let side = -1; side <= 1; side += 2) {
+    const discGrad = ctx.createRadialGradient(
+      0.56 * r,
+      side * 0.15 * r,
+      r * 0.02,
+      0.54 * r,
+      side * 0.15 * r,
+      r * 0.20
+    );
+    discGrad.addColorStop(0, '#fffbeb');
+    discGrad.addColorStop(0.68, '#fef3c7');
+    discGrad.addColorStop(1, '#e7c296');
+    ctx.fillStyle = discGrad;
+    ctx.beginPath();
+    ctx.ellipse(0.55 * r, side * 0.15 * r, r * 0.175, r * 0.185, side * 0.15, 0, TWO_PI);
+    ctx.fill();
+
+    // Subtle chestnut facial disc rim
+    ctx.strokeStyle = 'rgba(120, 53, 15, 0.42)';
+    ctx.lineWidth = r * 0.02;
+    ctx.stroke();
+  }
+
+  // Cute crown gloss
+  drawGlossOval(ctx, 0.36 * r, -0.14 * r, r * 0.13, r * 0.06, -0.3, 0.28);
+
+  // --- Tiny Golden Beak Pointing +X ---
+  const beakGrad = ctx.createLinearGradient(0.68 * r, -0.08 * r, 0.92 * r, 0.08 * r);
+  beakGrad.addColorStop(0, '#fef08a');
+  beakGrad.addColorStop(0.5, '#f59e0b');
+  beakGrad.addColorStop(1, '#b45309');
+  ctx.fillStyle = beakGrad;
+  ctx.beginPath();
+  ctx.moveTo(0.68 * r, -0.075 * r);
+  ctx.quadraticCurveTo(0.84 * r, -0.055 * r, 0.92 * r, 0);
+  ctx.quadraticCurveTo(0.84 * r, 0.055 * r, 0.68 * r, 0.075 * r);
+  ctx.quadraticCurveTo(0.64 * r, 0, 0.68 * r, -0.075 * r);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#78350f';
+  ctx.lineWidth = r * 0.02;
+  ctx.stroke();
+  // Tiny beak highlight
+  drawGlossOval(ctx, 0.77 * r, -0.02 * r, r * 0.045, r * 0.018, 0.1, 0.65);
+
+  // --- Two Big Expressive Glowing Amber Eyes ---
+  for (let side = -1; side <= 1; side += 2) {
+    const ex = 0.57 * r;
+    const ey = side * 0.165 * r;
+    // Soft glowing amber eye halo (no shadowBlur!)
+    drawRadialGlow(
+      ctx,
+      ex,
+      ey,
+      r * 0.04,
+      r * 0.24,
+      'rgba(254, 240, 138, 0.45)',
+      'rgba(245, 158, 11, 0)'
+    );
+    drawExpressiveEye(ctx, ex, ey, r * 0.125, eyeAmber, '#0f172a', 0.20, 0);
+  }
+}
+
+function drawHelicopter(ctx, r, ph, time, color, accent) {
+  const rotorAngle = time * 15.5 + ph * 3.0;
+  const tailBlink = 0.22 + 0.78 * Math.pow(0.5 + 0.5 * Math.sin(time * 5.2 + ph), 2);
+  const searchSweep = Math.sin(time * 1.5 + ph) * 0.06;
+  const hullColor = color || '#14b8a6';
+  const stripeColor = accent || '#fb7185';
+
+  // --- Warm Volumetric Searchlight Cone Shining Forward (+X) ---
+  ctx.save();
+  ctx.rotate(searchSweep);
+  const beamGrad = ctx.createLinearGradient(0.80 * r, 0, 2.48 * r, 0);
+  beamGrad.addColorStop(0, 'rgba(254, 249, 195, 0.58)');
+  beamGrad.addColorStop(0.40, 'rgba(254, 240, 138, 0.24)');
+  beamGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
+  ctx.fillStyle = beamGrad;
+  ctx.beginPath();
+  ctx.moveTo(0.82 * r, -0.10 * r);
+  ctx.lineTo(2.48 * r, -0.74 * r);
+  ctx.lineTo(2.48 * r, 0.74 * r);
+  ctx.lineTo(0.82 * r, 0.10 * r);
+  ctx.closePath();
+  ctx.fill();
+
+  // Brighter inner volumetric core
+  const coreGrad = ctx.createLinearGradient(0.82 * r, 0, 1.95 * r, 0);
+  coreGrad.addColorStop(0, 'rgba(255, 251, 235, 0.48)');
+  coreGrad.addColorStop(0.55, 'rgba(254, 240, 138, 0.16)');
+  coreGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
+  ctx.fillStyle = coreGrad;
+  ctx.beginPath();
+  ctx.moveTo(0.82 * r, -0.06 * r);
+  ctx.lineTo(1.95 * r, -0.34 * r);
+  ctx.lineTo(1.95 * r, 0.34 * r);
+  ctx.lineTo(0.82 * r, 0.06 * r);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // Subtle nocturnal aircraft rim aura
+  drawRadialGlow(
+    ctx,
+    0.08 * r,
+    0,
+    r * 0.15,
+    r * 1.24,
+    'rgba(56, 189, 248, 0.16)',
+    'rgba(14, 165, 233, 0)'
+  );
+
+  // --- Landing Skids Peeking Out on Both Sides ---
+  ctx.save();
+  ctx.strokeStyle = '#334155';
+  ctx.lineCap = 'round';
+  for (let side = -1; side <= 1; side += 2) {
+    // Two cross-struts connecting fuselage to skid
+    ctx.lineWidth = r * 0.044;
+    ctx.beginPath();
+    ctx.moveTo(0.32 * r, side * 0.28 * r);
+    ctx.lineTo(0.32 * r, side * 0.51 * r);
+    ctx.moveTo(-0.14 * r, side * 0.24 * r);
+    ctx.lineTo(-0.14 * r, side * 0.51 * r);
+    ctx.stroke();
+
+    // Main tubular landing skid
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = r * 0.064;
+    ctx.beginPath();
+    ctx.moveTo(-0.34 * r, side * 0.51 * r);
+    ctx.lineTo(0.48 * r, side * 0.51 * r);
+    ctx.quadraticCurveTo(0.58 * r, side * 0.51 * r, 0.62 * r, side * 0.44 * r);
+    ctx.stroke();
+
+    // Metallic top glint on skid
+    ctx.strokeStyle = 'rgba(226, 232, 240, 0.55)';
+    ctx.lineWidth = r * 0.022;
+    ctx.beginPath();
+    ctx.moveTo(-0.30 * r, side * 0.495 * r);
+    ctx.lineTo(0.48 * r, side * 0.495 * r);
+    ctx.stroke();
+    ctx.strokeStyle = '#334155';
+  }
+  ctx.restore();
+
+  // --- Horizontal Tail Stabilizers & Tiny Spinning Tail Rotor (-X) ---
+  for (let side = -1; side <= 1; side += 2) {
+    const stabGrad = ctx.createLinearGradient(-0.98 * r, 0, -0.98 * r, side * 0.36 * r);
+    stabGrad.addColorStop(0, hullColor);
+    stabGrad.addColorStop(0.75, '#0f766e');
+    stabGrad.addColorStop(1, '#1e293b');
+    ctx.fillStyle = stabGrad;
+    ctx.beginPath();
+    ctx.moveTo(-0.84 * r, side * 0.05 * r);
+    ctx.lineTo(-0.92 * r, side * 0.34 * r);
+    ctx.lineTo(-1.05 * r, side * 0.32 * r);
+    ctx.lineTo(-1.02 * r, side * 0.05 * r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(15, 23, 42, 0.55)';
+    ctx.lineWidth = r * 0.02;
+    ctx.stroke();
+
+    // Accent tip stripe on stabilizer
+    ctx.fillStyle = stripeColor;
+    ctx.fillRect(-1.02 * r, side > 0 ? 0.25 * r : -0.32 * r, 0.10 * r, 0.07 * r);
+  }
+
+  // Tiny translucent tail rotor blur spinning on port side
+  const tailSpin = 0.65 + 0.35 * Math.sin(time * 28 + ph);
+  ctx.fillStyle = `rgba(224, 242, 254, ${0.42 * tailSpin})`;
+  ctx.beginPath();
+  ctx.ellipse(-1.17 * r, -0.10 * r, r * 0.14, r * 0.032, 0, 0, TWO_PI);
+  ctx.fill();
+
+  // --- Slender Tail Boom Stretching to -X ---
+  const boomGrad = ctx.createLinearGradient(0, -0.14 * r, 0, 0.14 * r);
+  boomGrad.addColorStop(0, '#e0f2fe');
+  boomGrad.addColorStop(0.32, hullColor);
+  boomGrad.addColorStop(0.85, '#0369a1');
+  boomGrad.addColorStop(1, '#0c4a6e');
+  ctx.fillStyle = boomGrad;
+  ctx.beginPath();
+  ctx.moveTo(-0.28 * r, -0.15 * r);
+  ctx.lineTo(-1.20 * r, -0.055 * r);
+  ctx.quadraticCurveTo(-1.26 * r, 0, -1.20 * r, 0.055 * r);
+  ctx.lineTo(-0.28 * r, 0.15 * r);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(15, 23, 42, 0.62)';
+  ctx.lineWidth = r * 0.024;
+  ctx.stroke();
+
+  // Vertical tail fin spine ridge
+  ctx.fillStyle = '#f8fafc';
+  traceRoundedRect(ctx, -1.24 * r, -0.028 * r, 0.22 * r, 0.056 * r, 0.024 * r);
+  ctx.fill();
+
+  // --- Tiny Blinking Red Tail Aviation Light ---
+  const tx = -1.24 * r;
+  drawRadialGlow(
+    ctx,
+    tx,
+    0,
+    r * 0.015,
+    r * (0.20 + 0.16 * tailBlink),
+    `rgba(248, 113, 113, ${0.82 * tailBlink})`,
+    'rgba(239, 68, 68, 0)'
+  );
+  ctx.fillStyle = `rgba(239, 68, 68, ${0.55 + 0.45 * tailBlink})`;
+  ctx.beginPath();
+  ctx.arc(tx, 0, r * 0.048, 0, TWO_PI);
+  ctx.fill();
+  ctx.fillStyle = `rgba(255, 241, 242, ${0.65 + 0.35 * tailBlink})`;
+  ctx.beginPath();
+  ctx.arc(tx, 0, r * 0.022, 0, TWO_PI);
+  ctx.fill();
+
+  // --- Teardrop Glossy Painted Fuselage ---
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(0.88 * r, 0);
+  ctx.bezierCurveTo(0.88 * r, -0.34 * r, 0.44 * r, -0.44 * r, 0.04 * r, -0.40 * r);
+  ctx.bezierCurveTo(-0.26 * r, -0.37 * r, -0.44 * r, -0.22 * r, -0.48 * r, 0);
+  ctx.bezierCurveTo(-0.44 * r, 0.22 * r, -0.26 * r, 0.37 * r, 0.04 * r, 0.40 * r);
+  ctx.bezierCurveTo(0.44 * r, 0.44 * r, 0.88 * r, 0.34 * r, 0.88 * r, 0);
+  ctx.closePath();
+
+  const fuseGrad = ctx.createRadialGradient(
+    0.22 * r,
+    -0.16 * r,
+    r * 0.06,
+    0.16 * r,
+    0,
+    r * 0.86
+  );
+  fuseGrad.addColorStop(0, '#e0f2fe');
+  fuseGrad.addColorStop(0.28, hullColor);
+  fuseGrad.addColorStop(0.76, '#0284c7');
+  fuseGrad.addColorStop(1, '#0c4a6e');
+  ctx.fillStyle = fuseGrad;
+  ctx.fill();
+
+  // Clipped decorative flank accent stripe & engine vents
+  ctx.save();
+  ctx.clip();
+  ctx.strokeStyle = stripeColor;
+  ctx.lineWidth = r * 0.055;
+  ctx.beginPath();
+  ctx.moveTo(-0.46 * r, -0.22 * r);
+  ctx.quadraticCurveTo(0.08 * r, -0.34 * r, 0.72 * r, -0.22 * r);
+  ctx.moveTo(-0.46 * r, 0.22 * r);
+  ctx.quadraticCurveTo(0.08 * r, 0.34 * r, 0.72 * r, 0.22 * r);
+  ctx.stroke();
+
+  // Twin dark engine cowling exhaust vents behind the rotor mast
+  ctx.fillStyle = '#0f172a';
+  for (let side = -1; side <= 1; side += 2) {
+    traceRoundedRect(ctx, -0.34 * r, side * 0.12 * r - 0.045 * r, 0.18 * r, 0.09 * r, 0.03 * r);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // Crisp metallic fuselage contour
+  ctx.strokeStyle = 'rgba(15, 23, 42, 0.68)';
+  ctx.lineWidth = r * 0.03;
+  ctx.stroke();
+  ctx.restore();
+
+  // --- Curved Dark-Tinted Panoramic Glass Cockpit Canopy at +X ---
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(0.81 * r, 0);
+  ctx.bezierCurveTo(0.81 * r, -0.26 * r, 0.56 * r, -0.34 * r, 0.26 * r, -0.31 * r);
+  ctx.quadraticCurveTo(0.32 * r, 0, 0.26 * r, 0.31 * r);
+  ctx.bezierCurveTo(0.56 * r, 0.34 * r, 0.81 * r, 0.26 * r, 0.81 * r, 0);
+  ctx.closePath();
+
+  const glassGrad = ctx.createRadialGradient(
+    0.58 * r,
+    -0.12 * r,
+    r * 0.03,
+    0.54 * r,
+    0,
+    r * 0.42
+  );
+  glassGrad.addColorStop(0, '#38bdf8');
+  glassGrad.addColorStop(0.28, '#1e293b');
+  glassGrad.addColorStop(0.72, '#0f172a');
+  glassGrad.addColorStop(1, '#020617');
+  ctx.fillStyle = glassGrad;
+  ctx.fill();
+
+  // Subtle warm instrument-panel glow inside canopy
+  ctx.save();
+  ctx.clip();
+  drawRadialGlow(
+    ctx,
+    0.52 * r,
+    0,
+    r * 0.02,
+    r * 0.22,
+    'rgba(254, 240, 138, 0.26)',
+    'rgba(251, 191, 36, 0)'
+  );
+
+  // Panoramic curved specular glass reflection streak
+  ctx.strokeStyle = 'rgba(224, 242, 254, 0.44)';
+  ctx.lineWidth = r * 0.055;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0.42 * r, -0.22 * r);
+  ctx.quadraticCurveTo(0.60 * r, -0.18 * r, 0.68 * r, -0.04 * r);
+  ctx.stroke();
+
+  // Center canopy divider mullion
+  ctx.strokeStyle = 'rgba(51, 65, 85, 0.85)';
+  ctx.lineWidth = r * 0.026;
+  ctx.beginPath();
+  ctx.moveTo(0.28 * r, 0);
+  ctx.lineTo(0.81 * r, 0);
+  ctx.stroke();
+  ctx.restore();
+
+  // Canopy metallic rim
+  ctx.strokeStyle = 'rgba(186, 230, 253, 0.42)';
+  ctx.lineWidth = r * 0.022;
+  ctx.stroke();
+  ctx.restore();
+
+  // Glossy roof highlight behind cockpit
+  drawGlossOval(ctx, -0.06 * r, -0.14 * r, r * 0.18, r * 0.07, -0.08, 0.34);
+
+  // Nose searchlight lens
+  drawRadialGlow(
+    ctx,
+    0.86 * r,
+    0,
+    r * 0.015,
+    r * 0.18,
+    'rgba(255, 251, 235, 0.88)',
+    'rgba(254, 240, 138, 0)'
+  );
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(0.85 * r, 0, r * 0.045, 0, TWO_PI);
+  ctx.fill();
+
+  // --- 4 Sweeping Semi-Translucent Main Rotor Blades Spinning Smoothly ---
+  const hubX = 0.04 * r;
+  // Subtle circular rotor-wash motion disc
+  drawRadialGlow(
+    ctx,
+    hubX,
+    0,
+    r * 0.88,
+    r * 1.18,
+    'rgba(224, 242, 254, 0.10)',
+    'rgba(224, 242, 254, 0)'
+  );
+  ctx.strokeStyle = 'rgba(224, 242, 254, 0.16)';
+  ctx.lineWidth = r * 0.025;
+  ctx.beginPath();
+  ctx.arc(hubX, 0, r * 1.12, 0, TWO_PI);
+  ctx.stroke();
+
+  ctx.save();
+  ctx.translate(hubX, 0);
+  ctx.rotate(rotorAngle);
+  for (let i = 0; i < 4; i++) {
+    ctx.save();
+    ctx.rotate((i * Math.PI) / 2);
+
+    // Soft trailing motion-blur wedge behind blade
+    const blurGrad = ctx.createLinearGradient(0, 0, 0, -0.24 * r);
+    blurGrad.addColorStop(0, 'rgba(224, 242, 254, 0.22)');
+    blurGrad.addColorStop(1, 'rgba(224, 242, 254, 0)');
+    ctx.fillStyle = blurGrad;
+    ctx.beginPath();
+    ctx.moveTo(0.10 * r, 0);
+    ctx.lineTo(1.14 * r, 0);
+    ctx.lineTo(1.10 * r, -0.22 * r);
+    ctx.lineTo(0.10 * r, -0.04 * r);
+    ctx.closePath();
+    ctx.fill();
+
+    // Sleek semi-translucent main rotor blade
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.62)';
+    traceRoundedRect(ctx, 0.06 * r, -0.046 * r, 1.10 * r, 0.092 * r, 0.036 * r);
+    ctx.fill();
+
+    // Bright safety tip band
+    ctx.fillStyle = 'rgba(254, 240, 138, 0.78)';
+    traceRoundedRect(ctx, 1.00 * r, -0.042 * r, 0.11 * r, 0.084 * r, 0.02 * r);
+    ctx.fill();
+
+    // Thin metallic leading-edge sheen
+    ctx.fillStyle = 'rgba(248, 250, 252, 0.48)';
+    ctx.fillRect(0.10 * r, 0.018 * r, 0.96 * r, 0.018 * r);
+
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // --- Glossy Central Rotor Hub Cap ---
+  const hubGrad = ctx.createRadialGradient(
+    hubX - 0.03 * r,
+    -0.04 * r,
+    r * 0.01,
+    hubX,
+    0,
+    r * 0.14
+  );
+  hubGrad.addColorStop(0, '#f8fafc');
+  hubGrad.addColorStop(0.5, '#64748b');
+  hubGrad.addColorStop(1, '#0f172a');
+  ctx.fillStyle = hubGrad;
+  ctx.beginPath();
+  ctx.arc(hubX, 0, r * 0.125, 0, TWO_PI);
+  ctx.fill();
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = r * 0.018;
+  ctx.stroke();
+}
+
+function drawBlimp(ctx, r, ph, time, color, accent) {
+  const navPulse = 0.45 + 0.55 * Math.sin(time * 3.6 + ph);
+  const tailNavPulse = 0.45 + 0.55 * Math.sin(time * 3.6 + ph + Math.PI);
+  const warmHum = 0.80 + 0.20 * Math.sin(time * 2.2 + ph);
+  const stripeColor = color || '#f87171';
+  const goldTrim = accent || '#fde68a';
+
+  // --- Subtle Warm Illuminated Glow Along Underside / Gondola Rim ---
+  drawRadialGlow(
+    ctx,
+    0.04 * r,
+    0,
+    r * 0.16,
+    r * 1.44,
+    `rgba(253, 224, 71, ${0.24 * warmHum})`,
+    'rgba(245, 158, 11, 0)'
+  );
+  drawRadialGlow(
+    ctx,
+    0.10 * r,
+    0,
+    r * 0.10,
+    r * 0.92,
+    `rgba(254, 240, 138, ${0.32 * warmHum})`,
+    'rgba(251, 191, 36, 0)'
+  );
+
+  // Warm illuminated gondola rim peeking subtly along mid-belly sides
+  ctx.save();
+  for (let side = -1; side <= 1; side += 2) {
+    ctx.strokeStyle = `rgba(254, 240, 138, ${0.58 * warmHum})`;
+    ctx.lineWidth = r * 0.055;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-0.18 * r, side * 0.55 * r);
+    ctx.quadraticCurveTo(0.14 * r, side * 0.61 * r, 0.42 * r, side * 0.52 * r);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // --- 4 Tail Fins at -X (Side Horizontal Fins + Ventral Hint; Dorsal Fin on Top Later) ---
+  for (let side = -1; side <= 1; side += 2) {
+    const finGrad = ctx.createLinearGradient(-0.70 * r, 0, -1.06 * r, side * 0.66 * r);
+    finGrad.addColorStop(0, '#e2e8f0');
+    finGrad.addColorStop(0.32, stripeColor);
+    finGrad.addColorStop(0.85, '#b91c1c');
+    finGrad.addColorStop(1, '#7f1d1d');
+    ctx.fillStyle = finGrad;
+    ctx.beginPath();
+    ctx.moveTo(-0.56 * r, side * 0.24 * r);
+    ctx.quadraticCurveTo(-0.78 * r, side * 0.58 * r, -1.04 * r, side * 0.64 * r);
+    ctx.lineTo(-1.12 * r, side * 0.52 * r);
+    ctx.quadraticCurveTo(-1.08 * r, side * 0.26 * r, -0.96 * r, side * 0.12 * r);
+    ctx.closePath();
+    ctx.fill();
+
+    // Decorative gold trim stripe on side fin
+    ctx.strokeStyle = goldTrim;
+    ctx.lineWidth = r * 0.032;
+    ctx.beginPath();
+    ctx.moveTo(-0.70 * r, side * 0.34 * r);
+    ctx.lineTo(-1.04 * r, side * 0.54 * r);
+    ctx.stroke();
+
+    // Crisp fin contour
+    ctx.strokeStyle = 'rgba(30, 41, 59, 0.60)';
+    ctx.lineWidth = r * 0.022;
+    ctx.stroke();
+  }
+
+  // Subtle ventral (4th) tail fin tip peeking behind tail cone
+  ctx.fillStyle = '#475569';
+  ctx.beginPath();
+  ctx.ellipse(-1.10 * r, 0, r * 0.08, r * 0.045, 0, 0, TWO_PI);
+  ctx.fill();
+
+  // --- Plump Elongated Silver-and-Amber/Coral Ribbed Envelope ---
+  const traceEnvelope = () => {
+    ctx.beginPath();
+    ctx.moveTo(1.04 * r, 0);
+    ctx.bezierCurveTo(1.04 * r, -0.36 * r, 0.58 * r, -0.58 * r, 0.04 * r, -0.56 * r);
+    ctx.bezierCurveTo(-0.48 * r, -0.54 * r, -0.96 * r, -0.26 * r, -1.04 * r, 0);
+    ctx.bezierCurveTo(-0.96 * r, 0.26 * r, -0.48 * r, 0.54 * r, 0.04 * r, 0.56 * r);
+    ctx.bezierCurveTo(0.58 * r, 0.58 * r, 1.04 * r, 0.36 * r, 1.04 * r, 0);
+    ctx.closePath();
+  };
+
+  ctx.save();
+  traceEnvelope();
+
+  // 3D metallic silver-pearl hull shading
+  const envGrad = ctx.createRadialGradient(
+    0.22 * r,
+    -0.22 * r,
+    r * 0.08,
+    0.04 * r,
+    0,
+    r * 1.12
+  );
+  envGrad.addColorStop(0, '#ffffff');
+  envGrad.addColorStop(0.24, '#e2e8f0');
+  envGrad.addColorStop(0.58, '#94a3b8');
+  envGrad.addColorStop(0.86, '#475569');
+  envGrad.addColorStop(1, '#334155');
+  ctx.fillStyle = envGrad;
+  ctx.fill();
+
+  // Clip envelope interior details (ribs, racing stripe, specular sheen)
+  ctx.save();
+  ctx.clip();
+
+  // Warm illuminated under-hull bounce glow along the outer edge
+  ctx.strokeStyle = `rgba(254, 240, 138, ${0.34 * warmHum})`;
+  ctx.lineWidth = r * 0.09;
+  traceEnvelope();
+  ctx.stroke();
+
+  // Decorative Coral/Amber Nose Cap
+  const noseGrad = ctx.createLinearGradient(0.76 * r, -0.36 * r, 1.04 * r, 0.36 * r);
+  noseGrad.addColorStop(0, '#fca5a5');
+  noseGrad.addColorStop(0.45, stripeColor);
+  noseGrad.addColorStop(1, '#991b1b');
+  ctx.fillStyle = noseGrad;
+  ctx.fillRect(0.78 * r, -0.60 * r, 0.32 * r, 1.20 * r);
+
+  // Decorative Girth Band around Mid-Section
+  ctx.fillStyle = stripeColor;
+  ctx.fillRect(0.10 * r, -0.60 * r, 0.16 * r, 1.20 * r);
+  ctx.fillStyle = goldTrim;
+  ctx.fillRect(0.07 * r, -0.60 * r, 0.035 * r, 1.20 * r);
+  ctx.fillRect(0.255 * r, -0.60 * r, 0.035 * r, 1.20 * r);
+
+  // Sleek Longitudinal Racing Stripe along Flanks
+  for (let side = -1; side <= 1; side += 2) {
+    ctx.strokeStyle = stripeColor;
+    ctx.lineWidth = r * 0.085;
+    ctx.beginPath();
+    ctx.moveTo(1.04 * r, 0);
+    ctx.bezierCurveTo(0.66 * r, side * 0.38 * r, -0.36 * r, side * 0.36 * r, -1.04 * r, 0);
+    ctx.stroke();
+
+    // Fine warm-gold accent pinstripe
+    ctx.strokeStyle = goldTrim;
+    ctx.lineWidth = r * 0.022;
+    ctx.beginPath();
+    ctx.moveTo(1.04 * r, 0);
+    ctx.bezierCurveTo(0.66 * r, side * 0.31 * r, -0.36 * r, side * 0.29 * r, -1.04 * r, 0);
+    ctx.stroke();
+  }
+
+  // Longitudinal Structural Envelope Ribs (Gore Seams)
+  const ribOffsets = [-0.42, -0.22, 0, 0.22, 0.42];
+  for (let i = 0; i < ribOffsets.length; i++) {
+    const k = ribOffsets[i];
+    // Dark recessed seam
+    ctx.strokeStyle = 'rgba(30, 41, 59, 0.28)';
+    ctx.lineWidth = r * 0.018;
+    ctx.beginPath();
+    ctx.moveTo(1.04 * r, 0);
+    ctx.bezierCurveTo(0.56 * r, k * 1.15 * r, -0.44 * r, k * 1.05 * r, -1.04 * r, 0);
+    ctx.stroke();
+
+    // Soft silver highlight beside seam
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.24)';
+    ctx.lineWidth = r * 0.014;
+    ctx.beginPath();
+    ctx.moveTo(1.04 * r, -0.01 * r);
+    ctx.bezierCurveTo(0.56 * r, (k * 1.15 - 0.02) * r, -0.44 * r, (k * 1.05 - 0.02) * r, -1.04 * r, -0.01 * r);
+    ctx.stroke();
+  }
+
+  // 3D Curved Top Specular Sheen Ribbon
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.48)';
+  ctx.lineWidth = r * 0.11;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0.68 * r, -0.20 * r);
+  ctx.quadraticCurveTo(0.06 * r, -0.34 * r, -0.58 * r, -0.16 * r);
+  ctx.stroke();
+
+  drawGlossOval(ctx, 0.34 * r, -0.22 * r, r * 0.26, r * 0.085, -0.08, 0.52);
+
+  ctx.restore();
+
+  // Crisp outer envelope contour
+  ctx.strokeStyle = 'rgba(30, 41, 59, 0.65)';
+  ctx.lineWidth = r * 0.028;
+  traceEnvelope();
+  ctx.stroke();
+  ctx.restore();
+
+  // --- Dorsal Top Fin (4th Fin Centered Proudly on Top of Tail) ---
+  const topFinGrad = ctx.createLinearGradient(-0.62 * r, -0.06 * r, -1.14 * r, 0.06 * r);
+  topFinGrad.addColorStop(0, '#f8fafc');
+  topFinGrad.addColorStop(0.45, stripeColor);
+  topFinGrad.addColorStop(1, '#991b1b');
+  ctx.fillStyle = topFinGrad;
+  ctx.beginPath();
+  ctx.moveTo(-0.58 * r, 0);
+  ctx.quadraticCurveTo(-0.84 * r, -0.065 * r, -1.14 * r, -0.042 * r);
+  ctx.lineTo(-1.14 * r, 0.042 * r);
+  ctx.quadraticCurveTo(-0.84 * r, 0.065 * r, -0.58 * r, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(15, 23, 42, 0.55)';
+  ctx.lineWidth = r * 0.018;
+  ctx.stroke();
+
+  // Bright metallic dorsal fin spine highlight
+  ctx.strokeStyle = 'rgba(255, 251, 235, 0.72)';
+  ctx.lineWidth = r * 0.02;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-0.62 * r, 0);
+  ctx.lineTo(-1.12 * r, 0);
+  ctx.stroke();
+
+  // Metallic nose mooring tip
+  ctx.fillStyle = goldTrim;
+  ctx.beginPath();
+  ctx.arc(1.04 * r, 0, r * 0.052, 0, TWO_PI);
+  ctx.fill();
+
+  // --- Two Tiny Warm Navigation Lights Pulsing at Nose (+X) and Tail (-X) ---
+  // Nose pulsing warm-gold beacon
+  const nx = 1.07 * r;
+  drawRadialGlow(
+    ctx,
+    nx,
+    0,
+    r * 0.015,
+    r * (0.22 + 0.16 * navPulse),
+    `rgba(254, 240, 138, ${0.84 * navPulse})`,
+    'rgba(251, 191, 36, 0)'
+  );
+  ctx.fillStyle = `rgba(253, 224, 71, ${0.65 + 0.35 * navPulse})`;
+  ctx.beginPath();
+  ctx.arc(nx, 0, r * 0.046, 0, TWO_PI);
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(nx, 0, r * 0.022, 0, TWO_PI);
+  ctx.fill();
+
+  // Tail pulsing warm-coral/amber beacon
+  const tx = -1.15 * r;
+  drawRadialGlow(
+    ctx,
+    tx,
+    0,
+    r * 0.015,
+    r * (0.20 + 0.16 * tailNavPulse),
+    `rgba(251, 146, 60, ${0.84 * tailNavPulse})`,
+    'rgba(239, 68, 68, 0)'
+  );
+  ctx.fillStyle = `rgba(251, 113, 133, ${0.65 + 0.35 * tailNavPulse})`;
+  ctx.beginPath();
+  ctx.arc(tx, 0, r * 0.044, 0, TWO_PI);
+  ctx.fill();
+  ctx.fillStyle = '#fffbeb';
+  ctx.beginPath();
+  ctx.arc(tx, 0, r * 0.020, 0, TWO_PI);
+  ctx.fill();
+}
+
 /* ============================================================================
  * Public Dispatcher
  * ========================================================================== */
@@ -1782,8 +2702,17 @@ export function drawMacroSkin(ctx, kind, r, ph, time, color, accent) {
     case 'lantern':
       drawLantern(ctx, r, ph, time, color, accent);
       return true;
+    case 'owl':
+      drawOwl(ctx, r, ph, time, color, accent);
+      return true;
     case 'car':
       drawCar(ctx, r, ph, time, color, accent);
+      return true;
+    case 'helicopter':
+      drawHelicopter(ctx, r, ph, time, color, accent);
+      return true;
+    case 'blimp':
+      drawBlimp(ctx, r, ph, time, color, accent);
       return true;
     case 'tree':
       drawTree(ctx, r, ph, time, color, accent);

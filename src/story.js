@@ -24,7 +24,7 @@ export const STORY_MOMENTS = {
   },
   scale_3: {
     chapter: 'ÉCHELLE IV · LA VILLE ENDORMIE',
-    text: "Les feuilles cèdent la place aux lanternes tièdes. Charlie survole déjà les rues endormies et les toits illuminés.",
+    text: 'Les feuilles cèdent la place aux lanternes célestes. Charlie plane désormais parmi les chouettes, les voitures, les hélicoptères et les grands dirigeables.',
   },
   scale_4: {
     chapter: 'ÉCHELLE V · LE BALLET ORBITAL',
