@@ -664,6 +664,50 @@ function isDirectionalSpecies(kind) {
  * Handcrafted Procedural Canvas 2D Renderers for all 30 Species
  * ========================================================================== */
 
+const _spriteCache = new Map();
+const SPRITE_FRAMES = 4;
+
+function _getSpeciesSprites(kind, col, acc) {
+  if (typeof document === 'undefined') return null;
+  const key = `${kind}|${col}|${acc}`;
+  let entry = _spriteCache.get(key);
+  if (entry) return entry;
+
+  // Give long-tailed/wide species extra canvas margin so tails & rings never clip
+  const wide = kind === 'comet' || kind === 'photon' || kind === 'bacteria' || kind === 'ringed' || kind === 'car';
+  const dim = wide ? 160 : 128;
+  const spriteR = wide ? 30 : 34;
+  const half = dim * 0.5;
+  const scaleFactor = half / spriteR;
+  const frames = [];
+
+  for (let f = 0; f < SPRITE_FRAMES; f++) {
+    const c = document.createElement('canvas');
+    c.width = dim;
+    c.height = dim;
+    const sctx = c.getContext('2d');
+    if (!sctx) return null;
+    sctx.translate(half, half);
+    const ph = (f / SPRITE_FRAMES) * TWO_PI;
+    const t = f * 0.45;
+    const drawn =
+      drawMicroSkin(sctx, kind, spriteR, ph, t, col, acc) ||
+      drawMacroSkin(sctx, kind, spriteR, ph, t, col, acc) ||
+      drawCosmicSkin(sctx, kind, spriteR, ph, t, col, acc);
+    if (!drawn) {
+      sctx.fillStyle = col;
+      sctx.beginPath();
+      sctx.arc(0, 0, spriteR * 0.85, 0, TWO_PI);
+      sctx.fill();
+    }
+    frames.push(c);
+  }
+
+  entry = { frames, scaleFactor };
+  _spriteCache.set(key, entry);
+  return entry;
+}
+
 function drawSpecies(ctx, e, time) {
   const r = e.size;
   const col = e.species.color;
@@ -674,6 +718,17 @@ function drawSpecies(ctx, e, time) {
   if (isDirectionalSpecies(kind)) {
     ctx.rotate(e.angle);
   }
+
+  // Fast 4-frame offscreen sprite blit (1 drawImage call, zero per-frame GPU gradients/clips!)
+  const cached = _getSpeciesSprites(kind, col, acc);
+  if (cached) {
+    const idx = Math.floor((((time * 2.2 + ph) % TWO_PI) + TWO_PI) / TWO_PI * SPRITE_FRAMES) & 3;
+    const drawHalf = r * cached.scaleFactor;
+    ctx.drawImage(cached.frames[idx], -drawHalf, -drawHalf, drawHalf * 2, drawHalf * 2);
+    return;
+  }
+
+  // Fallback for non-DOM environments (Node smoke tests)
   const drawn =
     drawMicroSkin(ctx, kind, r, ph, time, col, acc) ||
     drawMacroSkin(ctx, kind, r, ph, time, col, acc) ||

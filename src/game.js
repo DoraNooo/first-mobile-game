@@ -49,6 +49,9 @@ class GlooGame {
     this.dangerVignette = document.getElementById('danger-vignette');
 
     this.powersBar = document.getElementById('powers-bar');
+    this.joystickZone = document.getElementById('joystick-zone');
+    this.joystickBase = document.getElementById('joystick-base');
+    this.joystickKnob = document.getElementById('joystick-knob');
     this.btnPowerSpit = document.getElementById('btn-power-spit');
     this.btnPowerDash = document.getElementById('btn-power-dash');
     this.badgePowerSpit = document.getElementById('badge-power-spit');
@@ -136,6 +139,17 @@ class GlooGame {
       worldX: 0,
       worldY: 0,
       rippleAlpha: 0,
+    };
+
+    // Translucent bottom-left virtual joystick state
+    this.joystick = {
+      active: false,
+      pointerId: null,
+      centerX: 0,
+      centerY: 0,
+      maxRadius: 36,
+      dx: 0,
+      dy: 0,
     };
 
     // Diegetic Vitality (Charlie's 3 tethered trailing lava-lamp droplets; 0 = vulnerable, next hit = defeat)
@@ -287,7 +301,7 @@ class GlooGame {
       const mobile = this._detectMobile();
       if (mobile !== this.isMobile) {
         this.isMobile = mobile;
-        this.dprCap = mobile ? 1.35 : 2;
+        this.dprCap = mobile ? 1.0 : 2;
         this.ecosystem.setMobileMode(mobile);
         this.particles.configure({ isMobile: mobile });
       }
@@ -348,6 +362,9 @@ class GlooGame {
     });
 
     const releasePointer = (e) => {
+      if (this.joystick.active && e.pointerId === this.joystick.pointerId) {
+        this.resetJoystick();
+      }
       if (e.pointerType === 'touch' && e.pointerId === this.pointer.movePointerId) {
         this.pointer.active = false;
         this.pointer.movePointerId = null;
@@ -355,6 +372,32 @@ class GlooGame {
     };
     window.addEventListener('pointerup', releasePointer);
     window.addEventListener('pointercancel', releasePointer);
+    window.addEventListener('pointermove', (e) => {
+      if (this.joystick.active && e.pointerId === this.joystick.pointerId) {
+        this._updateJoystickFromClient(e.clientX, e.clientY);
+      }
+    });
+
+    if (this.joystickZone) {
+      this.joystickZone.addEventListener('pointerdown', (e) => {
+        if (this.state !== STATE.PLAYING) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (this.transition.active && (this.transition.phase === 'in' || this.transition.phase === 'hold')) {
+          if (this.transition.guard <= 0) this.dismissScaleTransition();
+          return;
+        }
+        if (this.joystick.pointerId !== null) return;
+        const rect = this.joystickBase.getBoundingClientRect();
+        this.joystick.centerX = rect.left + rect.width * 0.5;
+        this.joystick.centerY = rect.top + rect.height * 0.5;
+        this.joystick.maxRadius = Math.max(28, rect.width * 0.34);
+        this.joystick.pointerId = e.pointerId;
+        this.joystick.active = true;
+        this.joystickZone.classList.add('active');
+        this._updateJoystickFromClient(e.clientX, e.clientY);
+      });
+    }
     this.canvas.addEventListener('pointerleave', (e) => {
       if (e.pointerType !== 'touch') {
         this.pointer.active = false;
@@ -629,10 +672,41 @@ class GlooGame {
     }
   }
 
+  _updateJoystickFromClient(clientX, clientY) {
+    const rawDx = clientX - this.joystick.centerX;
+    const rawDy = clientY - this.joystick.centerY;
+    const dist = Math.hypot(rawDx, rawDy);
+    const maxR = this.joystick.maxRadius;
+    const clamped = Math.min(dist, maxR);
+    const nx = dist > 0.001 ? rawDx / dist : 0;
+    const ny = dist > 0.001 ? rawDy / dist : 0;
+    const mag = clamped / maxR;
+
+    this.joystick.dx = mag > 0.06 ? nx * mag : 0;
+    this.joystick.dy = mag > 0.06 ? ny * mag : 0;
+
+    if (this.joystickKnob) {
+      const kx = nx * clamped;
+      const ky = ny * clamped;
+      this.joystickKnob.style.transform = `translate3d(${kx.toFixed(1)}px, ${ky.toFixed(1)}px, 0)`;
+    }
+  }
+
+  resetJoystick() {
+    this.joystick.active = false;
+    this.joystick.pointerId = null;
+    this.joystick.dx = 0;
+    this.joystick.dy = 0;
+    if (this.joystickZone) this.joystickZone.classList.remove('active');
+    if (this.joystickKnob) this.joystickKnob.style.transform = 'translate3d(0, 0, 0)';
+  }
+
   startNewJourney() {
     this.hideAllOverlays();
     this.hud.classList.remove('hidden');
     this.powersBar.classList.remove('hidden');
+    if (this.joystickZone) this.joystickZone.classList.remove('hidden');
+    this.resetJoystick();
 
     this.blob.reset(0, 0, BASE_SIZE);
     this.particles.reset();
@@ -687,6 +761,8 @@ class GlooGame {
   continueAtCurrentScale() {
     this.hideAllOverlays();
     this.powersBar.classList.remove('hidden');
+    if (this.joystickZone) this.joystickZone.classList.remove('hidden');
+    this.resetJoystick();
     const startSize = scaleIndexToStartSize(this.currentScaleIndex) * 1.15;
     this.blob.reset(this.camera.x, this.camera.y, startSize);
     this.blob.invulnTimer = 2.0;
@@ -1172,25 +1248,43 @@ class GlooGame {
       }
     }
 
-    // Pointer ripple fade
-    if (this.pointer.active) {
-      this.pointer.rippleAlpha = Math.min(1, this.pointer.rippleAlpha + dt * 4);
-      if (!this.hintDismissed) {
+    // Pointer / Joystick steering
+    let hasSteerTarget = this.pointer.active;
+    if (this.joystick.active) {
+      hasSteerTarget = Math.hypot(this.joystick.dx, this.joystick.dy) > 0.01;
+      if (hasSteerTarget) {
+        this.pointer.worldX = this.blob.x + this.joystick.dx * this.blob.size * 5.2;
+        this.pointer.worldY = this.blob.y + this.joystick.dy * this.blob.size * 5.2;
+      }
+      if (!this.hintDismissed && hasSteerTarget) {
         this.hintMovedTime += dt;
-        if (this.hintMovedTime > 1.8) {
+        if (this.hintMovedTime > 1.5) {
           this.hintDismissed = true;
           this.touchHint.classList.add('fade-out');
           setTimeout(() => this.touchHint.classList.add('hidden'), 650);
         }
       }
+      this.pointer.rippleAlpha = 0;
     } else {
-      this.pointer.rippleAlpha = Math.max(0, this.pointer.rippleAlpha - dt * 3.5);
-    }
+      if (this.pointer.active) {
+        this.pointer.rippleAlpha = Math.min(1, this.pointer.rippleAlpha + dt * 4);
+        if (!this.hintDismissed) {
+          this.hintMovedTime += dt;
+          if (this.hintMovedTime > 1.8) {
+            this.hintDismissed = true;
+            this.touchHint.classList.add('fade-out');
+            setTimeout(() => this.touchHint.classList.add('hidden'), 650);
+          }
+        }
+      } else {
+        this.pointer.rippleAlpha = Math.max(0, this.pointer.rippleAlpha - dt * 3.5);
+      }
 
-    // Convert pointer to world coordinates
-    const worldPtr = this.screenToWorld(this.pointer.screenX, this.pointer.screenY);
-    this.pointer.worldX = worldPtr.x;
-    this.pointer.worldY = worldPtr.y;
+      // Convert pointer to world coordinates
+      const worldPtr = this.screenToWorld(this.pointer.screenX, this.pointer.screenY);
+      this.pointer.worldX = worldPtr.x;
+      this.pointer.worldY = worldPtr.y;
+    }
 
     const progress = sizeToProgress(this.blob.size);
     const viewW = this.width / this.camera.zoom;
@@ -1209,7 +1303,7 @@ class GlooGame {
       dt,
       this.pointer.worldX,
       this.pointer.worldY,
-      this.pointer.active,
+      hasSteerTarget,
       nearestPrey,
       nearestPredator,
       this.camera.zoom
